@@ -13,7 +13,7 @@ pip install "jangada-ai[groq]"
   `.parse()` nativo).
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 llm = LLM("groq", "llama-3.3-70b-versatile")
 ```
 

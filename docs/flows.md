@@ -7,7 +7,7 @@ A jangada traz duas formas de encadear chamadas, ambas agregando `usage`/`cost`.
 `Flow` encadeia `Step`s: a saída de um vira entrada do próximo.
 
 ```python
-from jangada import LLM, Flow, Step
+from jangada_ai import LLM, Flow, Step
 
 llm = LLM("openai", "gpt-4o-mini")
 
@@ -29,7 +29,7 @@ Cada `Step` referencia as saídas anteriores pelo nome via template `{{ }}`.
 (core async), juntando os resultados.
 
 ```python
-from jangada import Graph
+from jangada_ai import Graph
 
 # roteamento condicional: escolhe o próximo nó conforme a saída
 # paralelo + junção: dispara vários nós e combina as respostas

@@ -11,7 +11,7 @@ pip install "jangada-ai[openai]"
 - **Base do adapter**: `_OpenAICompatible` (compartilhado com Groq)
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 llm = LLM("openai", "gpt-4o-mini")
 ```
 

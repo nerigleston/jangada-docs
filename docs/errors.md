@@ -5,7 +5,7 @@ Cada SDK levanta exceções diferentes. A jangada traduz tudo para uma hierarqui
 nativo de SDK escapa da fronteira dos adapters.
 
 ```python
-from jangada import LLM, errors
+from jangada_ai import LLM, errors
 
 try:
     LLM("openai", "modelo-inexistente").complete("oi")

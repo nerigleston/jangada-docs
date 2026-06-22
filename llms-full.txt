@@ -3,7 +3,7 @@
 > Camada fina e adaptável sobre os SDKs oficiais de LLM (Anthropic, OpenAI,
 > Groq, Gemini). Troque provider/model/api_key sem mudar o resto do código.
 > Este arquivo concatena toda a documentação de docs/ para consumo em um
-> único fetch. Instalação: pip install jangada-ai (import segue 'import jangada').
+> único fetch. Instalação: pip install jangada-ai (importa-se como import jangada_ai).
 
 Pacote no PyPI: https://pypi.org/project/jangada-ai/ — índice curto em llms.txt.
 
@@ -18,7 +18,7 @@ resto do código.
 ## Instalação
 
 ```bash
-pip install jangada-ai                 # nome no PyPI (import segue "jangada")
+pip install jangada-ai                 # nome no PyPI; importa-se como jangada_ai
 pip install "jangada-ai[anthropic]"    # só Claude
 pip install "jangada-ai[openai,groq]"  # OpenAI + Groq
 pip install "jangada-ai[all]"          # todos os SDKs
@@ -26,14 +26,14 @@ pip install "jangada-ai[files]"        # leitura de docx/pdf/csv/xlsx
 ```
 
 > O nome de distribuição é `jangada-ai` (o nome `jangada` estava ocupado no
-> PyPI), mas o pacote importado continua `import jangada`.
+> PyPI). O pacote é importado como `import jangada_ai` (hífen vira underscore).
 
-Imports são preguiçosos: `import jangada` funciona sem nenhum SDK instalado.
+Imports são preguiçosos: `import jangada_ai` funciona sem nenhum SDK instalado.
 
 ## Primeira chamada
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 
 llm = LLM("anthropic", "claude-opus-4-8")
 print(llm.complete("Explique {{tema}} em 2 frases.", tema="MCP").text)
@@ -166,7 +166,7 @@ pip install "jangada-ai[openai]"
 - **Base do adapter**: `_OpenAICompatible` (compartilhado com Groq)
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 llm = LLM("openai", "gpt-4o-mini")
 ```
 
@@ -223,7 +223,7 @@ pip install "jangada-ai[groq]"
   `.parse()` nativo).
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 llm = LLM("groq", "llama-3.3-70b-versatile")
 ```
 
@@ -270,7 +270,7 @@ pip install "jangada-ai[gemini]"
 - **Variável de ambiente**: `GEMINI_API_KEY` (ou `GOOGLE_API_KEY`)
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 llm = LLM("gemini", "gemini-2.5-flash")
 ```
 
@@ -320,7 +320,7 @@ pip install "jangada-ai[anthropic]"
 - **Variável de ambiente**: `ANTHROPIC_API_KEY`
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 llm = LLM("anthropic", "claude-opus-4-8")
 ```
 
@@ -411,7 +411,7 @@ de como cada provider implementa isso por baixo.
 
 ```python
 from pydantic import BaseModel
-from jangada import LLM
+from jangada_ai import LLM
 
 class Pessoa(BaseModel):
     nome: str
@@ -455,7 +455,7 @@ Imagens entram como `ImagePart` (bytes + mime) e são traduzidas para o formato
 nativo de cada SDK. Use sempre um modelo com visão.
 
 ```python
-from jangada import LLM, Image
+from jangada_ai import LLM, Image
 
 llm = LLM("openai", "gpt-4o-mini")
 
@@ -493,7 +493,7 @@ delimitadoras em pixels absolutos**. É vision + structured output, então
 **funciona em qualquer provider com visão** — não é exclusivo do Gemini.
 
 ```python
-from jangada import LLM, detect_objects
+from jangada_ai import LLM, detect_objects
 
 llm = LLM("gemini", "gemini-2.5-flash")
 dets = detect_objects(llm, "foto.png")
@@ -568,7 +568,7 @@ providers** — depende de a API do provider aceitar áudio:
 ## Uso
 
 ```python
-from jangada import LLM, Audio
+from jangada_ai import LLM, Audio
 
 # OpenAI
 llm = LLM("openai", "gpt-4o-transcribe")
@@ -609,7 +609,7 @@ llm.transcribe("audio.mp3", prompt="Transcreva com marcações de tempo.")
 Como qualquer chamada da jangada, `transcribe()` honra retry e fallback:
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 
 primario = LLM("groq", "whisper-large-v3-turbo")
 reserva  = LLM("openai", "gpt-4o-transcribe")
@@ -641,7 +641,7 @@ pip install "jangada-ai[files]"   # pypdf, python-docx, openpyxl
 ```
 
 ```python
-from jangada import LLM, Document
+from jangada_ai import LLM, Document
 
 llm = LLM("openai", "gpt-4o-mini")
 
@@ -726,7 +726,7 @@ A jangada combina duas defesas contra falhas de API: **retry com backoff** no
 mesmo candidato e **fallback** para outro modelo/provider.
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 
 primario = LLM("openai", "gpt-4o-mini")
 reserva  = LLM("anthropic", "claude-haiku-4-5-20251001")
@@ -791,7 +791,7 @@ Os preços ficam em `pricing.py` (aproximados, por 1M de tokens). Você pode
 registrar/ajustar:
 
 ```python
-from jangada import register_price, price_for
+from jangada_ai import register_price, price_for
 
 register_price("meu-modelo", input=0.5, output=1.5)   # USD por 1M tokens
 print(price_for("gpt-4o-mini"))
@@ -815,7 +815,7 @@ Cada SDK levanta exceções diferentes. A jangada traduz tudo para uma hierarqui
 nativo de SDK escapa da fronteira dos adapters.
 
 ```python
-from jangada import LLM, errors
+from jangada_ai import LLM, errors
 
 try:
     LLM("openai", "modelo-inexistente").complete("oi")
@@ -860,7 +860,7 @@ A jangada traz duas formas de encadear chamadas, ambas agregando `usage`/`cost`.
 `Flow` encadeia `Step`s: a saída de um vira entrada do próximo.
 
 ```python
-from jangada import LLM, Flow, Step
+from jangada_ai import LLM, Flow, Step
 
 llm = LLM("openai", "gpt-4o-mini")
 
@@ -882,7 +882,7 @@ Cada `Step` referencia as saídas anteriores pelo nome via template `{{ }}`.
 (core async), juntando os resultados.
 
 ```python
-from jangada import Graph
+from jangada_ai import Graph
 
 # roteamento condicional: escolhe o próximo nó conforme a saída
 # paralelo + junção: dispara vários nós e combina as respostas
@@ -908,7 +908,7 @@ Ative `debug=True` para um trace de cada chamada: provider/modelo, params,
 retries, fallback, tokens, custo e duração — por agente.
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 
 llm = LLM("openai", "gpt-4o-mini", debug=True, name="extrator")
 llm.complete("...")
@@ -978,7 +978,7 @@ class MeuProvider(_OpenAICompatible):
 
 ## Invariantes a respeitar
 
-- **Imports preguiçosos**: `import jangada` deve funcionar sem o SDK.
+- **Imports preguiçosos**: `import jangada_ai` deve funcionar sem o SDK.
 - **Tipos normalizados na fronteira**: fora dos adapters só circula
   `Message`/`Completion`; objetos nativos ficam em `Completion.raw`.
 - **Tradução de erro sempre**: envolva chamadas de SDK em `try/except` e

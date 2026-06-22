@@ -5,7 +5,7 @@ delimitadoras em pixels absolutos**. É vision + structured output, então
 **funciona em qualquer provider com visão** — não é exclusivo do Gemini.
 
 ```python
-from jangada import LLM, detect_objects
+from jangada_ai import LLM, detect_objects
 
 llm = LLM("gemini", "gemini-2.5-flash")
 dets = detect_objects(llm, "foto.png")

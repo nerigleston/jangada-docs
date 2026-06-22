@@ -11,7 +11,7 @@ pip install "jangada-ai[gemini]"
 - **Variável de ambiente**: `GEMINI_API_KEY` (ou `GOOGLE_API_KEY`)
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 llm = LLM("gemini", "gemini-2.5-flash")
 ```
 

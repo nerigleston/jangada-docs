@@ -46,7 +46,7 @@ class MeuProvider(_OpenAICompatible):
 
 ## Invariantes a respeitar
 
-- **Imports preguiçosos**: `import jangada` deve funcionar sem o SDK.
+- **Imports preguiçosos**: `import jangada_ai` deve funcionar sem o SDK.
 - **Tipos normalizados na fronteira**: fora dos adapters só circula
   `Message`/`Completion`; objetos nativos ficam em `Completion.raw`.
 - **Tradução de erro sempre**: envolva chamadas de SDK em `try/except` e

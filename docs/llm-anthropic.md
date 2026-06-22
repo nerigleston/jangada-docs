@@ -10,7 +10,7 @@ pip install "jangada-ai[anthropic]"
 - **Variável de ambiente**: `ANTHROPIC_API_KEY`
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 llm = LLM("anthropic", "claude-opus-4-8")
 ```
 

@@ -16,7 +16,7 @@ providers** — depende de a API do provider aceitar áudio:
 ## Uso
 
 ```python
-from jangada import LLM, Audio
+from jangada_ai import LLM, Audio
 
 # OpenAI
 llm = LLM("openai", "gpt-4o-transcribe")
@@ -57,7 +57,7 @@ llm.transcribe("audio.mp3", prompt="Transcreva com marcações de tempo.")
 Como qualquer chamada da jangada, `transcribe()` honra retry e fallback:
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 
 primario = LLM("groq", "whisper-large-v3-turbo")
 reserva  = LLM("openai", "gpt-4o-transcribe")

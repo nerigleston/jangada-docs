@@ -18,7 +18,7 @@ Os preços ficam em `pricing.py` (aproximados, por 1M de tokens). Você pode
 registrar/ajustar:
 
 ```python
-from jangada import register_price, price_for
+from jangada_ai import register_price, price_for
 
 register_price("meu-modelo", input=0.5, output=1.5)   # USD por 1M tokens
 print(price_for("gpt-4o-mini"))

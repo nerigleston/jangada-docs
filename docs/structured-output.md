@@ -5,7 +5,7 @@ de como cada provider implementa isso por baixo.
 
 ```python
 from pydantic import BaseModel
-from jangada import LLM
+from jangada_ai import LLM
 
 class Pessoa(BaseModel):
     nome: str

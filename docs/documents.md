@@ -9,7 +9,7 @@ pip install "jangada-ai[files]"   # pypdf, python-docx, openpyxl
 ```
 
 ```python
-from jangada import LLM, Document
+from jangada_ai import LLM, Document
 
 llm = LLM("openai", "gpt-4o-mini")
 

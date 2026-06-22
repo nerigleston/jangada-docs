@@ -7,7 +7,7 @@ resto do código.
 ## Instalação
 
 ```bash
-pip install jangada-ai                 # nome no PyPI (import segue "jangada")
+pip install jangada-ai                 # nome no PyPI; importa-se como jangada_ai
 pip install "jangada-ai[anthropic]"    # só Claude
 pip install "jangada-ai[openai,groq]"  # OpenAI + Groq
 pip install "jangada-ai[all]"          # todos os SDKs
@@ -15,14 +15,14 @@ pip install "jangada-ai[files]"        # leitura de docx/pdf/csv/xlsx
 ```
 
 > O nome de distribuição é `jangada-ai` (o nome `jangada` estava ocupado no
-> PyPI), mas o pacote importado continua `import jangada`.
+> PyPI). O pacote é importado como `import jangada_ai` (hífen vira underscore).
 
-Imports são preguiçosos: `import jangada` funciona sem nenhum SDK instalado.
+Imports são preguiçosos: `import jangada_ai` funciona sem nenhum SDK instalado.
 
 ## Primeira chamada
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 
 llm = LLM("anthropic", "claude-opus-4-8")
 print(llm.complete("Explique {{tema}} em 2 frases.", tema="MCP").text)

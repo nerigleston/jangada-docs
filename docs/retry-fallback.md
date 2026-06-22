@@ -4,7 +4,7 @@ A jangada combina duas defesas contra falhas de API: **retry com backoff** no
 mesmo candidato e **fallback** para outro modelo/provider.
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 
 primario = LLM("openai", "gpt-4o-mini")
 reserva  = LLM("anthropic", "claude-haiku-4-5-20251001")

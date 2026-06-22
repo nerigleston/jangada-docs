@@ -4,7 +4,7 @@ Imagens entram como `ImagePart` (bytes + mime) e são traduzidas para o formato
 nativo de cada SDK. Use sempre um modelo com visão.
 
 ```python
-from jangada import LLM, Image
+from jangada_ai import LLM, Image
 
 llm = LLM("openai", "gpt-4o-mini")
 

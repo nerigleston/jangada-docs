@@ -6,10 +6,10 @@
 > output (Pydantic), vision, ingestão de documentos (docx/pdf/csv/xlsx),
 > streaming, async, retry com backoff e fallback automático por tipo de erro.
 
-Instalação: `pip install jangada-ai` (o nome de import segue `import jangada`).
+Instalação: `pip install jangada-ai` (importa-se como `import jangada_ai`).
 Princípio central: a complexidade de cada SDK fica isolada em um *adapter*; o
 resto da lib só conhece os tipos normalizados `Message` e `Completion`. Os
-imports dos SDKs são preguiçosos — `import jangada` funciona sem nenhum SDK
+imports dos SDKs são preguiçosos — `import jangada_ai` funciona sem nenhum SDK
 instalado.
 
 ## Documentação
@@ -38,13 +38,9 @@ instalado.
 ## Referência
 
 - [Documentação completa (llms-full.txt)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/llms-full.txt): todos os guias de docs/ concatenados, para consumo em um único fetch.
-- [README](https://raw.githubusercontent.com/nerigleston/jangada/master/README.md): visão geral completa com exemplos.
-- [CLAUDE.md](https://raw.githubusercontent.com/nerigleston/jangada/master/CLAUDE.md): arquitetura, invariantes e convenções do projeto.
+- [README](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/README.md): visão geral completa com exemplos.
 - [Pacote no PyPI](https://pypi.org/project/jangada-ai/): instalação e versões publicadas.
-- [Repositório no GitHub](https://github.com/nerigleston/jangada): código-fonte, issues e workflow de publicação.
+- [Repositório no GitHub](https://github.com/nerigleston/jangada-docs): código-fonte, issues e workflow de publicação.
 
 ## Optional
 
-- [Exemplos executáveis](https://github.com/nerigleston/jangada/tree/master/examples): scripts por recurso (vision, structured, fallback, graph, async, debug).
-- [Testes](https://github.com/nerigleston/jangada/tree/master/tests): suíte com `FakeProvider` e fixtures de documento.
-- [Código do adapter OpenAI/Groq](https://raw.githubusercontent.com/nerigleston/jangada/master/jangada/providers/openai_compat.py): referência de como um adapter traduz mensagens e params.

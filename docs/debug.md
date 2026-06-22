@@ -4,7 +4,7 @@ Ative `debug=True` para um trace de cada chamada: provider/modelo, params,
 retries, fallback, tokens, custo e duração — por agente.
 
 ```python
-from jangada import LLM
+from jangada_ai import LLM
 
 llm = LLM("openai", "gpt-4o-mini", debug=True, name="extrator")
 llm.complete("...")
