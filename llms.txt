@@ -30,6 +30,7 @@ instalado.
 - [Streaming](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/streaming.md): `stream()`/`astream()` com retry+fallback antes do primeiro token.
 - [Retry e fallback](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/retry-fallback.md): backoff por candidato e failover por tipo de erro.
 - [Custo e tokens](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/cost.md): `usage`/`cost` na resposta e tabela de preços aproximada.
+- [Observabilidade](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/observability.md): `Observability`/`Trace` enviam lotes de chamadas para uma plataforma de observabilidade.
 - [Erros normalizados](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/errors.md): hierarquia única via `classify()` e conjuntos TRANSIENT/DEFAULT_FAILOVER.
 - [Fluxos e Graph](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/flows.md): encadeamento sequencial (`Flow`) e roteamento condicional/paralelo (`Graph`).
 - [Debug](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/debug.md): trace passo a passo por agente.
