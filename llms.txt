@@ -19,6 +19,7 @@ instalado.
 - [Parâmetros e perfis](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/parameters.md): params canônicos (temperature, max_tokens, ...) e normalização por modelo (gpt-5, gemini-3.x).
 - [Structured output](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/structured-output.md): `parse()`/`aparse()` com Pydantic, uniforme entre providers.
 - [Vision](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/vision.md): imagens via `ImagePart`/`Image`, tradução por SDK.
+- [Detecção de objetos](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/detect.md): `detect_objects()` com bounding boxes em pixels; funciona em qualquer provider com visão.
 - [Documentos (docx/pdf/csv/xlsx)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/documents.md): `files=` com extração de texto por padrão (vision só opt-in); xlsx multi-aba.
 - [Streaming](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/streaming.md): `stream()`/`astream()` com retry+fallback antes do primeiro token.
 - [Retry e fallback](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/retry-fallback.md): backoff por candidato e failover por tipo de erro.
@@ -31,9 +32,13 @@ instalado.
 ## Referência
 
 - [Documentação completa (llms-full.txt)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/llms-full.txt): todos os guias de docs/ concatenados, para consumo em um único fetch.
-- [Pacote no PyPI](https://pypi.org/project/jangada-ai/): instalação (`pip install jangada-ai`) e versões publicadas.
-- [Repositório de documentação](https://github.com/nerigleston/jangada-docs): fonte destes guias e do llms.txt.
+- [README](https://raw.githubusercontent.com/nerigleston/jangada/master/README.md): visão geral completa com exemplos.
+- [CLAUDE.md](https://raw.githubusercontent.com/nerigleston/jangada/master/CLAUDE.md): arquitetura, invariantes e convenções do projeto.
+- [Pacote no PyPI](https://pypi.org/project/jangada-ai/): instalação e versões publicadas.
+- [Repositório no GitHub](https://github.com/nerigleston/jangada): código-fonte, issues e workflow de publicação.
 
 ## Optional
 
-- [Índice da documentação (README)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/README.md): visão geral e mapa dos guias.
+- [Exemplos executáveis](https://github.com/nerigleston/jangada/tree/master/examples): scripts por recurso (vision, structured, fallback, graph, async, debug).
+- [Testes](https://github.com/nerigleston/jangada/tree/master/tests): suíte com `FakeProvider` e fixtures de documento.
+- [Código do adapter OpenAI/Groq](https://raw.githubusercontent.com/nerigleston/jangada/master/jangada/providers/openai_compat.py): referência de como um adapter traduz mensagens e params.
