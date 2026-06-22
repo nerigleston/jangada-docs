@@ -1,0 +1,40 @@
+# Erros normalizados
+
+Cada SDK levanta exceções diferentes. A jangada traduz tudo para uma hierarquia
+única via `errors.classify()`, com `status_code` quando disponível. Nenhum erro
+nativo de SDK escapa da fronteira dos adapters.
+
+```python
+from jangada import LLM, errors
+
+try:
+    LLM("openai", "modelo-inexistente").complete("oi")
+except errors.NotFoundError as e:
+    print(e.status_code)   # 404
+except errors.LLMError as e:
+    print("falha genérica:", e)
+```
+
+## Hierarquia (resumo)
+
+Todas herdam de `errors.LLMError`. As principais categorias:
+
+| Erro                 | Origem típica                      | Failover padrão? |
+|----------------------|------------------------------------|------------------|
+| `RateLimitError`     | 429                                | sim              |
+| `TimeoutError`       | timeout de rede                    | sim              |
+| `ConnectionError`    | falha de conexão                   | sim              |
+| `ServerError`        | 5xx                                | sim              |
+| `NotFoundError`      | 404 (modelo/endpoint)              | sim (sem retry)  |
+| `AuthError`          | 401/403                            | **não**          |
+| `BadRequestError`    | 400 (params inválidos)             | **não**          |
+
+## Conjuntos usados pela política
+
+- `errors.TRANSIENT` — o que dispara **retry com backoff** (rate limit, timeout,
+  conexão, 5xx).
+- `errors.DEFAULT_FAILOVER` — o que dispara **fallback** (os transitórios + 404).
+  Não inclui `auth` nem `bad_request` por padrão.
+
+Você pode customizar `retry_on=` e `backoff_on=` por `LLM` — veja
+[Retry e fallback](retry-fallback.md).

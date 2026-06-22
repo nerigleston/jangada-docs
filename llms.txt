@@ -1,0 +1,39 @@
+# jangada
+
+> `jangada` é uma camada fina e adaptável sobre os SDKs oficiais de LLM
+> (Anthropic, OpenAI, Groq, Gemini). Permite trocar **provider / model /
+> api_key** sem mudar o resto do código, com templates `{{ }}`, structured
+> output (Pydantic), vision, ingestão de documentos (docx/pdf/csv/xlsx),
+> streaming, async, retry com backoff e fallback automático por tipo de erro.
+
+Instalação: `pip install jangada-ai` (o nome de import segue `import jangada`).
+Princípio central: a complexidade de cada SDK fica isolada em um *adapter*; o
+resto da lib só conhece os tipos normalizados `Message` e `Completion`. Os
+imports dos SDKs são preguiçosos — `import jangada` funciona sem nenhum SDK
+instalado.
+
+## Documentação
+
+- [Começando](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/getting-started.md): instalação, primeira chamada e como trocar de provider.
+- [Providers e chaves](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/providers.md): os quatro providers, variáveis de ambiente e precedência de chave.
+- [Parâmetros e perfis](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/parameters.md): params canônicos (temperature, max_tokens, ...) e normalização por modelo (gpt-5, gemini-3.x).
+- [Structured output](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/structured-output.md): `parse()`/`aparse()` com Pydantic, uniforme entre providers.
+- [Vision](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/vision.md): imagens via `ImagePart`/`Image`, tradução por SDK.
+- [Documentos (docx/pdf/csv/xlsx)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/documents.md): `files=` com extração de texto por padrão (vision só opt-in); xlsx multi-aba.
+- [Streaming](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/streaming.md): `stream()`/`astream()` com retry+fallback antes do primeiro token.
+- [Retry e fallback](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/retry-fallback.md): backoff por candidato e failover por tipo de erro.
+- [Custo e tokens](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/cost.md): `usage`/`cost` na resposta e tabela de preços aproximada.
+- [Erros normalizados](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/errors.md): hierarquia única via `classify()` e conjuntos TRANSIENT/DEFAULT_FAILOVER.
+- [Fluxos e Graph](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/flows.md): encadeamento sequencial (`Flow`) e roteamento condicional/paralelo (`Graph`).
+- [Debug](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/debug.md): trace passo a passo por agente.
+- [Estendendo (novo provider)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/extending.md): contrato `Provider`, atalho `_OpenAICompatible` e invariantes.
+
+## Referência
+
+- [Documentação completa (llms-full.txt)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/llms-full.txt): todos os guias de docs/ concatenados, para consumo em um único fetch.
+- [Pacote no PyPI](https://pypi.org/project/jangada-ai/): instalação (`pip install jangada-ai`) e versões publicadas.
+- [Repositório de documentação](https://github.com/nerigleston/jangada-docs): fonte destes guias e do llms.txt.
+
+## Optional
+
+- [Índice da documentação (README)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/README.md): visão geral e mapa dos guias.

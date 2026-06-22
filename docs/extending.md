@@ -1,0 +1,60 @@
+# Estendendo: adicionar um provider
+
+Cada provider é um *adapter* que herda de `Provider` e traduz os tipos
+normalizados para o SDK nativo.
+
+## Passos
+
+1. Crie `jangada/providers/<nome>.py` com uma classe que herda de `Provider` e
+   implementa os 6 métodos + `_build_client` / `_build_async_client`.
+2. Defina `name` e `env_key`.
+3. Importe o SDK **só dentro** dos métodos (imports preguiçosos — invariante).
+4. Registre em `registry.py` com um loader preguiçoso.
+5. Adicione o extra em `pyproject.toml`.
+
+## Contrato (`Provider`)
+
+```python
+class Provider:
+    name: str
+    env_key: str | None
+
+    def _build_client(self) -> Any: ...
+    def _build_async_client(self) -> Any: ...
+    def complete(self, messages, **opts) -> Completion: ...
+    async def acomplete(self, messages, **opts) -> Completion: ...
+    def parse(self, messages, schema, **opts) -> Completion: ...
+    async def aparse(self, messages, schema, **opts) -> Completion: ...
+    def stream(self, messages, **opts) -> Iterator[str]: ...
+    def astream(self, messages, **opts) -> AsyncIterator[str]: ...
+```
+
+## Atalho para dialeto OpenAI
+
+Se o provider falar `chat.completions` (estilo OpenAI), herde de
+`_OpenAICompatible` e só ajuste os atributos:
+
+```python
+class MeuProvider(_OpenAICompatible):
+    name = "meu"
+    env_key = "MEU_API_KEY"
+    sdk_module = "meu_sdk"
+    sync_class = "Client"
+    async_class = "AsyncClient"
+    supports_parse_helper = False   # True se tiver .parse() nativo
+```
+
+## Invariantes a respeitar
+
+- **Imports preguiçosos**: `import jangada` deve funcionar sem o SDK.
+- **Tipos normalizados na fronteira**: fora dos adapters só circula
+  `Message`/`Completion`; objetos nativos ficam em `Completion.raw`.
+- **Tradução de erro sempre**: envolva chamadas de SDK em `try/except` e
+  re-levante via `classify(e, self.name)` — veja [Erros](errors.md).
+- **Paridade sync/async**: todo método tem versão `a*`.
+- **Quirks por modelo** vão em `profiles.py` — veja [Parâmetros](parameters.md).
+
+## Testes
+
+Use o padrão de `FakeProvider` registrado em runtime; veja
+o módulo `tests/conftest.py` do pacote.
