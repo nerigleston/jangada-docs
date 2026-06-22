@@ -1,0 +1,43 @@
+# Matriz de capacidades por provider
+
+O que cada provider suporta na jangada. Os recursos da API pública são os
+mesmos (`complete`, `parse`, `stream`, `transcribe`, ...); o que muda é o que
+cada provider consegue fazer por baixo.
+
+| Recurso                         | OpenAI | Groq | Gemini | Anthropic |
+|---------------------------------|:------:|:----:|:------:|:---------:|
+| Texto (`complete`/`acomplete`)  | ✅     | ✅   | ✅     | ✅        |
+| Structured output (`parse`)     | ✅     | ✅   | ✅     | ✅        |
+| Streaming (`stream`/`astream`)  | ✅     | ✅   | ✅     | ✅        |
+| Vision / imagens (`images=`)    | ✅     | ⚠️¹  | ✅     | ✅        |
+| Documentos (`files=`)²          | ✅     | ✅   | ✅     | ✅        |
+| Detecção de objetos             | ✅     | ⚠️¹  | ✅³    | ⚠️        |
+| Transcrição de áudio (`transcribe`) | ✅ | ✅   | ✅     | ❌        |
+| Param `top_k`                   | ❌     | ❌   | ✅     | ✅        |
+| Param `seed`                    | ✅     | ✅   | ✅     | ❌        |
+| Param `stop`                    | ✅     | ✅   | ✅ (`stop_sequences`) | ✅ (`stop_sequences`) |
+
+¹ Depende do modelo: vision no Groq exige um modelo com visão (ex.: família
+Llama vision); modelos de texto puro não aceitam imagem.
+² `files=` extrai texto **localmente** (docx/pdf/csv/xlsx) e envia como texto —
+por isso funciona em todos. Veja [Documentos](documents.md).
+³ A convenção de bounding box (0–1000) é nativa do Gemini, que é o mais preciso.
+
+## Como cada um implementa o structured output
+
+| Provider  | Mecanismo                                                |
+|-----------|----------------------------------------------------------|
+| OpenAI    | `chat.completions.parse(response_format=Modelo)`         |
+| Groq      | `response_format={"type":"json_schema",...}` + validação |
+| Gemini    | `config.response_schema=Modelo` → `resp.parsed`          |
+| Anthropic | tool-forcing (`tool_choice` fixo) → valida `tool_use`    |
+
+## Detalhe por provider
+
+- [OpenAI](llm-openai.md)
+- [Groq](llm-groq.md)
+- [Gemini](llm-gemini.md)
+- [Anthropic](llm-anthropic.md)
+
+Os parâmetros canônicos e os perfis por modelo (gpt-5, gemini-3.x) estão em
+[Parâmetros e perfis](parameters.md).

@@ -16,10 +16,16 @@ instalado.
 
 - [Começando](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/getting-started.md): instalação, primeira chamada e como trocar de provider.
 - [Providers e chaves](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/providers.md): os quatro providers, variáveis de ambiente e precedência de chave.
+- [Matriz de capacidades](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/capabilities.md): o que cada provider suporta (vision, áudio, structured, params).
+- [OpenAI](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-openai.md): modelos, recursos e quirks do provider OpenAI.
+- [Groq](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-groq.md): modelos, recursos e quirks do provider Groq.
+- [Gemini](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-gemini.md): modelos, recursos e quirks do provider Gemini.
+- [Anthropic](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-anthropic.md): modelos, recursos e o que o Claude NÃO faz (áudio).
 - [Parâmetros e perfis](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/parameters.md): params canônicos (temperature, max_tokens, ...) e normalização por modelo (gpt-5, gemini-3.x).
 - [Structured output](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/structured-output.md): `parse()`/`aparse()` com Pydantic, uniforme entre providers.
 - [Vision](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/vision.md): imagens via `ImagePart`/`Image`, tradução por SDK.
 - [Detecção de objetos](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/detect.md): `detect_objects()` com bounding boxes em pixels; funciona em qualquer provider com visão.
+- [Transcrição de áudio](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/audio.md): `transcribe()` (OpenAI, Groq, Gemini); Anthropic não suporta áudio.
 - [Documentos (docx/pdf/csv/xlsx)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/documents.md): `files=` com extração de texto por padrão (vision só opt-in); xlsx multi-aba.
 - [Streaming](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/streaming.md): `stream()`/`astream()` com retry+fallback antes do primeiro token.
 - [Retry e fallback](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/retry-fallback.md): backoff por candidato e failover por tipo de erro.

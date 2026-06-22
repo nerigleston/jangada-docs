@@ -107,6 +107,258 @@ contrário, implemente os 6 métodos do contrato `Provider`. Detalhes em
 
 ---
 
+# Matriz de capacidades por provider
+
+O que cada provider suporta na jangada. Os recursos da API pública são os
+mesmos (`complete`, `parse`, `stream`, `transcribe`, ...); o que muda é o que
+cada provider consegue fazer por baixo.
+
+| Recurso                         | OpenAI | Groq | Gemini | Anthropic |
+|---------------------------------|:------:|:----:|:------:|:---------:|
+| Texto (`complete`/`acomplete`)  | ✅     | ✅   | ✅     | ✅        |
+| Structured output (`parse`)     | ✅     | ✅   | ✅     | ✅        |
+| Streaming (`stream`/`astream`)  | ✅     | ✅   | ✅     | ✅        |
+| Vision / imagens (`images=`)    | ✅     | ⚠️¹  | ✅     | ✅        |
+| Documentos (`files=`)²          | ✅     | ✅   | ✅     | ✅        |
+| Detecção de objetos             | ✅     | ⚠️¹  | ✅³    | ⚠️        |
+| Transcrição de áudio (`transcribe`) | ✅ | ✅   | ✅     | ❌        |
+| Param `top_k`                   | ❌     | ❌   | ✅     | ✅        |
+| Param `seed`                    | ✅     | ✅   | ✅     | ❌        |
+| Param `stop`                    | ✅     | ✅   | ✅ (`stop_sequences`) | ✅ (`stop_sequences`) |
+
+¹ Depende do modelo: vision no Groq exige um modelo com visão (ex.: família
+Llama vision); modelos de texto puro não aceitam imagem.
+² `files=` extrai texto **localmente** (docx/pdf/csv/xlsx) e envia como texto —
+por isso funciona em todos. Veja [Documentos](documents.md).
+³ A convenção de bounding box (0–1000) é nativa do Gemini, que é o mais preciso.
+
+## Como cada um implementa o structured output
+
+| Provider  | Mecanismo                                                |
+|-----------|----------------------------------------------------------|
+| OpenAI    | `chat.completions.parse(response_format=Modelo)`         |
+| Groq      | `response_format={"type":"json_schema",...}` + validação |
+| Gemini    | `config.response_schema=Modelo` → `resp.parsed`          |
+| Anthropic | tool-forcing (`tool_choice` fixo) → valida `tool_use`    |
+
+## Detalhe por provider
+
+- [OpenAI](llm-openai.md)
+- [Groq](llm-groq.md)
+- [Gemini](llm-gemini.md)
+- [Anthropic](llm-anthropic.md)
+
+Os parâmetros canônicos e os perfis por modelo (gpt-5, gemini-3.x) estão em
+[Parâmetros e perfis](parameters.md).
+
+---
+
+# OpenAI
+
+Provider `openai`. Adapter sobre o SDK `openai` (dialeto `chat.completions`).
+
+```bash
+pip install "jangada-ai[openai]"
+```
+
+- **`provider=`**: `"openai"`
+- **Variável de ambiente**: `OPENAI_API_KEY`
+- **Base do adapter**: `_OpenAICompatible` (compartilhado com Groq)
+
+```python
+from jangada import LLM
+llm = LLM("openai", "gpt-4o-mini")
+```
+
+## O que faz
+
+- **Texto** (`complete`/`acomplete`) e **streaming** (`stream`/`astream`).
+- **Structured output** (`parse`): usa o helper nativo
+  `chat.completions.parse(response_format=Modelo)` → `.message.parsed`.
+- **Vision** (`images=`): imagens viram `image_url` com data URI.
+- **Documentos** (`files=`): extração de texto local (comum a todos).
+- **Detecção de objetos** (`detect_objects`): via vision + structured.
+- **Transcrição de áudio** (`transcribe`): endpoint dedicado
+  `audio.transcriptions.create`. Modelos: `gpt-4o-transcribe`,
+  `gpt-4o-mini-transcribe`, `whisper-1`.
+
+## Estrutura e quirks
+
+- **Parâmetros**: aceita `temperature`, `max_tokens`, `top_p`, `stop`, `seed`.
+  **Não** tem `top_k` (é descartado).
+- **Perfil de modelo** (`profiles.py`): a família `gpt-5` rejeita `temperature`
+  e usa `max_completion_tokens` em vez de `max_tokens` — a jangada normaliza
+  isso automaticamente. Veja [Parâmetros e perfis](parameters.md).
+- **Resposta** (`Completion`): `text`, `usage` (`input_tokens`/`output_tokens`
+  derivados de `prompt_tokens`/`completion_tokens`), `raw` com o objeto nativo.
+- **Erros**: traduzidos por `errors.classify()` para a hierarquia normalizada.
+
+## Exemplo de structured
+
+```python
+from pydantic import BaseModel
+class Pessoa(BaseModel):
+    nome: str; idade: int
+
+llm.parse("Extraia: João, 30 anos.", Pessoa).parsed   # Pessoa(nome='João', idade=30)
+```
+
+Relacionado: [Matriz de capacidades](capabilities.md), [Groq](llm-groq.md)
+(mesmo dialeto), [Transcrição de áudio](audio.md).
+
+---
+
+# Groq
+
+Provider `groq`. Adapter sobre o SDK `groq`, que fala o mesmo dialeto
+`chat.completions` da OpenAI — por isso herda de `_OpenAICompatible`.
+
+```bash
+pip install "jangada-ai[groq]"
+```
+
+- **`provider=`**: `"groq"`
+- **Variável de ambiente**: `GROQ_API_KEY`
+- **Diferença para a OpenAI**: `supports_parse_helper = False` (não tem
+  `.parse()` nativo).
+
+```python
+from jangada import LLM
+llm = LLM("groq", "llama-3.3-70b-versatile")
+```
+
+## O que faz
+
+- **Texto** e **streaming** — foco em latência muito baixa.
+- **Structured output** (`parse`): como não há helper `.parse`, usa
+  `response_format={"type":"json_schema",...}` e valida com
+  `model_validate_json`.
+- **Vision** (`images=`): suportado **apenas em modelos com visão** (ex.:
+  família Llama vision). Modelos de texto puro recusam imagem.
+- **Documentos** (`files=`): extração de texto local.
+- **Transcrição de áudio** (`transcribe`): endpoint dedicado (compatível com o
+  da OpenAI). Modelos: `whisper-large-v3`, `whisper-large-v3-turbo` (rápido).
+
+## Estrutura e quirks
+
+- **Parâmetros**: `temperature`, `max_tokens`, `top_p`, `stop`, `seed`.
+  Sem `top_k`.
+- **Mesma base da OpenAI**: a tradução de mensagens, structured e áudio
+  reaproveitam `_OpenAICompatible`; só mudam `sdk_module`/`sync_class`/
+  `async_class`/`supports_parse_helper`.
+- **Resposta** (`Completion`): igual à OpenAI (`text`, `usage`, `raw`).
+
+## Quando escolher Groq
+
+Velocidade e custo de inferência baixos — ótimo para transcrição em lote
+(`whisper-large-v3-turbo`) e respostas de baixa latência. Combine como
+**fallback** ou **primário** com OpenAI (mesmo dialeto). Veja
+[Transcrição de áudio](audio.md) e [Retry e fallback](retry-fallback.md).
+
+---
+
+# Gemini
+
+Provider `gemini`. Adapter sobre o SDK `google-genai`. Tem um único `Client`; o
+async fica em `client.aio`.
+
+```bash
+pip install "jangada-ai[gemini]"
+```
+
+- **`provider=`**: `"gemini"`
+- **Variável de ambiente**: `GEMINI_API_KEY` (ou `GOOGLE_API_KEY`)
+
+```python
+from jangada import LLM
+llm = LLM("gemini", "gemini-2.5-flash")
+```
+
+## O que faz
+
+- **Texto** e **streaming** (`generate_content` / `generate_content_stream`).
+- **Structured output** (`parse`): `config.response_schema=Modelo` +
+  `response_mime_type="application/json"` → `resp.parsed`.
+- **Vision** (`images=`): imagens viram `types.Part.from_bytes`.
+- **Documentos** (`files=`): extração de texto local.
+- **Detecção de objetos** (`detect_objects`): **o mais preciso** — o formato de
+  bounding box 0–1000 é nativo do treino do Gemini.
+- **Transcrição de áudio** (`transcribe`): multimodal — o áudio entra como
+  `Part.from_bytes` junto de uma instrução; **não** é endpoint dedicado.
+
+## Estrutura e quirks
+
+- **Mensagens**: o papel `system` vira `system_instruction` no
+  `GenerateContentConfig` (não é uma mensagem comum); `assistant` vira `model`.
+- **Parâmetros canônicos → config**: `max_tokens`→`max_output_tokens`,
+  `stop`→`stop_sequences`; `temperature`/`top_p`/`top_k`/`seed` passam direto.
+  É o único provider com `top_k`.
+- **Perfil de modelo** (`profiles.py`): `gemini-3.x` descarta sampling
+  (`temperature`/`top_p`/`top_k`) e usa `thinking_level` no lugar de
+  `thinking_budget`. Function calling multi-turn no 3.x exige preservar as
+  *thought signatures* (integridade do histórico). Veja
+  [Parâmetros e perfis](parameters.md).
+- **Resposta** (`Completion`): `usage` vem de `usage_metadata`
+  (`prompt_token_count`/`candidates_token_count`).
+
+## Por que é o "canivete suíço" aqui
+
+É o único que cobre vision, detecção e áudio **sem endpoints separados** —
+tudo via `generateContent`. Veja [Matriz de capacidades](capabilities.md).
+
+---
+
+# Anthropic (Claude)
+
+Provider `anthropic`. Adapter sobre o SDK `anthropic`.
+
+```bash
+pip install "jangada-ai[anthropic]"
+```
+
+- **`provider=`**: `"anthropic"`
+- **Variável de ambiente**: `ANTHROPIC_API_KEY`
+
+```python
+from jangada import LLM
+llm = LLM("anthropic", "claude-opus-4-8")
+```
+
+## O que faz
+
+- **Texto** e **streaming**.
+- **Structured output** (`parse`): por **tool-forcing** — define uma ferramenta
+  com o schema e fixa `tool_choice`, depois valida o `tool_use.input` contra o
+  modelo Pydantic. (Claude não tem um `response_format` como a OpenAI.)
+- **Vision** (`images=`): imagens viram bloco `image` com `source` base64.
+- **Documentos** (`files=`): extração de texto local.
+
+## O que NÃO faz
+
+- **Transcrição de áudio**: a API do Claude **não aceita áudio** — `transcribe()`
+  levanta `UnsupportedError`. Use OpenAI, Groq ou Gemini para áudio (e, se
+  quiser, mantenha o Claude como provider de texto com fallback de áudio em
+  outro). Veja [Transcrição de áudio](audio.md).
+- **Detecção de objetos**: funciona mecanicamente (vision + structured), mas a
+  precisão das coordenadas é menor que a do Gemini.
+
+## Estrutura e quirks
+
+- **Parâmetros**: `temperature`, `max_tokens`, `top_p`, `top_k`, `stop`
+  (→ `stop_sequences`). **Não** tem `seed` (é descartado).
+- **`max_tokens` é obrigatório** na API do Claude — a jangada já usa um default
+  (`1024`) quando você não informa.
+- **System**: vai no campo `system` da requisição (não como mensagem).
+- **Resposta** (`Completion`): `usage` de `input_tokens`/`output_tokens` nativos;
+  `raw` com o objeto da SDK.
+- **Erros**: 529 (overloaded) vira `OverloadedError` (subtipo de `ServerError`),
+  elegível a retry/fallback. Veja [Erros](errors.md).
+
+Relacionado: [Matriz de capacidades](capabilities.md),
+[Structured output](structured-output.md).
+
+---
+
 # Parâmetros de geração e perfis por modelo
 
 A jangada aceita **nomes canônicos** de parâmetros e cada adapter os traduz para
@@ -295,6 +547,86 @@ Use sempre um modelo com visão. Veja também [Vision](vision.md) e
 
 As dimensões são lidas direto dos bytes (PNG, JPEG, GIF, BMP, WEBP) sem
 dependência externa. Para outros formatos, passe `image_size=(largura, altura)`.
+
+---
+
+# Transcrição de áudio (speech-to-text)
+
+`LLM.transcribe()` converte áudio em texto. **Não é suportado por todos os
+providers** — depende de a API do provider aceitar áudio:
+
+| Provider  | Suporta? | Como         | Modelos típicos                                  |
+|-----------|----------|--------------|--------------------------------------------------|
+| OpenAI    | ✅       | endpoint dedicado | `gpt-4o-transcribe`, `gpt-4o-mini-transcribe`, `whisper-1` |
+| Groq      | ✅       | endpoint dedicado | `whisper-large-v3`, `whisper-large-v3-turbo`     |
+| Gemini    | ✅       | multimodal (`generateContent`) | `gemini-2.5-flash`, `gemini-2.5-pro` |
+| Anthropic | ❌       | —            | a API do Claude não aceita áudio                 |
+
+> Tentar transcrever no Anthropic levanta `UnsupportedError`. O "voice" do
+> Claude é recurso de produto (app/Claude Code), não da API do modelo.
+
+## Uso
+
+```python
+from jangada import LLM, Audio
+
+# OpenAI
+llm = LLM("openai", "gpt-4o-transcribe")
+print(llm.transcribe("entrevista.mp3").text)
+
+# Groq (mais rápido/barato)
+llm = LLM("groq", "whisper-large-v3-turbo")
+print(llm.transcribe("entrevista.mp3").text)
+
+# Gemini (multimodal)
+llm = LLM("gemini", "gemini-2.5-flash")
+print(llm.transcribe("entrevista.mp3").text)
+```
+
+Entradas aceitas: caminho, `AudioPart` ou bytes via `Audio.from_bytes`:
+
+```python
+audio = Audio.from_bytes(blob, "audio/wav", name="fala.wav")
+llm.transcribe(audio)
+```
+
+Async: `await llm.atranscribe(audio)`.
+
+## Opções por provider
+
+Os kwargs extras vão direto ao provider quando ele os aceita:
+
+```python
+# OpenAI/Groq aceitam language, prompt, response_format, temperature, ...
+llm.transcribe("audio.mp3", language="pt", response_format="text")
+
+# Gemini aceita prompt= como instrução (ex.: incluir timestamps)
+llm.transcribe("audio.mp3", prompt="Transcreva com marcações de tempo.")
+```
+
+## Fallback entre providers de áudio
+
+Como qualquer chamada da jangada, `transcribe()` honra retry e fallback:
+
+```python
+from jangada import LLM
+
+primario = LLM("groq", "whisper-large-v3-turbo")
+reserva  = LLM("openai", "gpt-4o-transcribe")
+stt = primario.with_fallback(reserva)
+
+stt.transcribe("audio.mp3")   # tenta Groq; se falhar (5xx/timeout), vai pro OpenAI
+```
+
+> `UnsupportedError` **não** entra no failover padrão — é erro de configuração
+> (provider sem áudio), não falha transitória. Veja [Erros](errors.md) e
+> [Retry e fallback](retry-fallback.md).
+
+## Formatos e limites
+
+- OpenAI/Groq: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm — até ~25 MB.
+- Gemini: áudio inline até ~20 MB no total do request (use a Files API do SDK
+  para arquivos maiores).
 
 ---
 
