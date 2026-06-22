@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo-full.png" alt="Jangada AI" width="420">
+</p>
+
 # jangada — documentação
 
 Documentação pública da lib **jangada** (no PyPI: [`jangada-ai`](https://pypi.org/project/jangada-ai/)),
