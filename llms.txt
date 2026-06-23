@@ -43,6 +43,7 @@ instalado.
 - [Observabilidade](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/observability.md): `Observability`/`Trace` enviam lotes de chamadas para uma plataforma de observabilidade.
 - [Erros normalizados](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/errors.md): hierarquia única via `classify()` e conjuntos TRANSIENT/DEFAULT_FAILOVER.
 - [Fluxos e Graph](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/flows.md): encadeamento sequencial (`Flow`) e roteamento condicional/paralelo (`Graph`).
+- [Agentes e times](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/agents.md): `Agent` (papel + tools/MCP + memória) e `Squad` (sequencial/hierárquico com delegação); `plan()` e `RAGMemory`.
 - [Debug](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/debug.md): trace passo a passo por agente.
 - [Estendendo (novo provider)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/extending.md): contrato `Provider`, atalho `_OpenAICompatible` e invariantes.
 
