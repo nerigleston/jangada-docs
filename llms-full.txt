@@ -581,7 +581,7 @@ SDK.
 |----------|--------|------|------------|
 | Anthropic | remoto (URL) | Messages API (`mcp_servers` + `MCPToolset`, header beta) | **beta** (`mcp-client-2025-11-20`) |
 | OpenAI | remoto (URL) | **Responses API** (`tools=[{type:"mcp"}]`) | usa a Responses API, não `chat.completions` |
-| Groq | remoto (URL) | Responses API (compatível com a OpenAI) | beta |
+| Groq | remoto (URL) | Responses API (compatível com a OpenAI) | beta — a jangada usa o **client OpenAI no `base_url` do Groq** por baixo (precisa do pacote `openai` instalado) |
 | Gemini | client-side (sessão) | `tools=[session]` (automatic function calling) | **só no async** (`acomplete`) — a sessão é assíncrona |
 
 ## Remoto (Anthropic / OpenAI / Groq)
@@ -737,6 +737,12 @@ então:
 
 Use sempre um modelo com visão. Veja também [Vision](vision.md) e
 [Structured output](structured-output.md).
+
+## Robustez
+
+A leitura é **tolerante**: se o modelo localizar a chave (ex.: devolver `objetos`
+em vez de `objects`) ou cortar um `box_2d` (≠ 4 números), o `detect_objects`
+ainda extrai o que dá e **descarta as caixas inválidas** em vez de retornar vazio.
 
 ## Dimensões da imagem
 

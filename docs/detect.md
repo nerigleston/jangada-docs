@@ -55,6 +55,12 @@ então:
 Use sempre um modelo com visão. Veja também [Vision](vision.md) e
 [Structured output](structured-output.md).
 
+## Robustez
+
+A leitura é **tolerante**: se o modelo localizar a chave (ex.: devolver `objetos`
+em vez de `objects`) ou cortar um `box_2d` (≠ 4 números), o `detect_objects`
+ainda extrai o que dá e **descarta as caixas inválidas** em vez de retornar vazio.
+
 ## Dimensões da imagem
 
 As dimensões são lidas direto dos bytes (PNG, JPEG, GIF, BMP, WEBP) sem

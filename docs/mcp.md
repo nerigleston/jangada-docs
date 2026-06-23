@@ -15,7 +15,7 @@ SDK.
 |----------|--------|------|------------|
 | Anthropic | remoto (URL) | Messages API (`mcp_servers` + `MCPToolset`, header beta) | **beta** (`mcp-client-2025-11-20`) |
 | OpenAI | remoto (URL) | **Responses API** (`tools=[{type:"mcp"}]`) | usa a Responses API, não `chat.completions` |
-| Groq | remoto (URL) | Responses API (compatível com a OpenAI) | beta |
+| Groq | remoto (URL) | Responses API (compatível com a OpenAI) | beta — a jangada usa o **client OpenAI no `base_url` do Groq** por baixo (precisa do pacote `openai` instalado) |
 | Gemini | client-side (sessão) | `tools=[session]` (automatic function calling) | **só no async** (`acomplete`) — a sessão é assíncrona |
 
 ## Remoto (Anthropic / OpenAI / Groq)
