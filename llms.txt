@@ -28,6 +28,7 @@ instalado.
 - [Detecção de objetos](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/detect.md): `detect_objects()` com bounding boxes em pixels; funciona em qualquer provider com visão.
 - [Transcrição de áudio](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/audio.md): `transcribe()` (OpenAI, Groq, Gemini); Anthropic não suporta áudio.
 - [Documentos (docx/pdf/csv/xlsx)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/documents.md): `files=` com extração de texto por padrão (vision só opt-in); xlsx multi-aba.
+- [RAG (embeddings + busca vetorial/híbrida)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/rag.md): `embed()` (OpenAI/Gemini), módulo `jangada_ai.rag` com chunking, vector store (pgvector/Mongo por string de conexão) e busca híbrida (RRF).
 - [Streaming](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/streaming.md): `stream()`/`astream()` com retry+fallback antes do primeiro token.
 - [Retry e fallback](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/retry-fallback.md): backoff por candidato e failover por tipo de erro.
 - [Custo e tokens](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/cost.md): `usage`/`cost` na resposta e tabela de preços aproximada.
