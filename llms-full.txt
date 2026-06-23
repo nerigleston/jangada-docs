@@ -626,13 +626,32 @@ async with stdio_client(params) as (read, write):
 > client-side. E passar uma sessão no Anthropic/OpenAI/Groq levanta — eles são
 > remotos por URL.
 
-## Alternativa portável (loop manual com `tools=`)
+## Cliente MCP próprio + agente (portável, qualquer provider)
 
-Se você já gerencia um cliente MCP (ex.: FastMCP) e quer controle total em
-**qualquer provider** (inclusive sync), liste as tools do MCP e use o
-[tool calling](tools.md) normal: passe-as em `tools=[...]`, receba
-`comp.tool_calls`, execute via seu cliente MCP e reenvie com
-`Message.tool_results(...)`. Isso não depende do MCP nativo de cada SDK.
+A jangada traz seu **próprio cliente MCP** (`MCPClient`) e um **loop de agente**
+(`run_agent`) que conecta no servidor, lista as tools, e roda o ciclo
+(modelo pede → executa → reenvia) **sozinho** — em **qualquer provider** (usa
+`tools=`, suportado nos 4), independente do MCP nativo de cada SDK.
+
+```bash
+pip install "jangada-ai[mcp]"   # cliente MCP (pacote oficial `mcp`)
+```
+
+```python
+from jangada_ai import LLM
+from jangada_ai.mcp import MCPClient, run_agent
+
+llm = LLM("openai", "gpt-4o-mini")   # ou anthropic/groq/gemini
+
+async with MCPClient("https://meu-mcp/mcp/") as mcp:      # ou command=/args= (stdio)
+    ans = await run_agent(llm, "Role uns dados", client=mcp)
+    print(ans.text)
+```
+
+Por baixo: `await mcp.list_tools()` vira `tools=[...]`, e cada `tool_call` do
+modelo é executado com `await mcp.call_tool(...)` e reenviado via
+`Message.tool_results(...)` — o mesmo [tool calling](tools.md) de sempre, no
+automático. Quer controle total? Use `MCPClient` + `tools=` na mão.
 
 ## Exemplo
 

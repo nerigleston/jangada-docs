@@ -1,38 +1,29 @@
-"""MCP (Model Context Protocol): remoto por URL e client-side (Gemini, async).
+"""MCP (Model Context Protocol): nativo (server-side) e agente client-side.
 
-Remoto (Anthropic/OpenAI/Groq): o provider conecta no servidor MCP e executa
-as tools. Gemini: sessão client-side via acomplete (a sessão é assíncrona).
+- Nativo remoto (Anthropic/OpenAI/Groq): o provider conecta e executa as tools.
+- Agente client-side (qualquer provider): MCPClient + run_agent conectam no
+  servidor, listam as tools e rodam o loop sozinhos. Requer: jangada-ai[mcp].
 """
 import asyncio
 
-from jangada_ai import LLM, MCPServer
+from jangada_ai import LLM, MCPClient, MCPServer, run_agent
 
-# --- remoto por URL (server-side) ---
+# --- nativo remoto por URL (server-side) ---
 llm = LLM("anthropic", "claude-opus-4-8")   # ou ("openai", "gpt-4o"), ("groq", ...)
 comp = llm.complete(
     "Liste as issues abertas.",
-    mcp_servers=[MCPServer(
-        url="https://mcp.exemplo.com/sse",
-        name="github",
-        authorization_token="TOKEN",      # opcional
-        allowed_tools=["list_issues"],    # opcional
-    )],
+    mcp_servers=[MCPServer(url="https://mcp.exemplo.com/sse", name="github",
+                           authorization_token="TOKEN", allowed_tools=["list_issues"])],
 )
 print(comp.text)
 
 
-# --- client-side no Gemini (async + sessão MCP) ---
-async def gemini_mcp():
-    from mcp import ClientSession
-    from mcp.client.stdio import StdioServerParameters, stdio_client
-
-    g = LLM("gemini", "gemini-2.5-flash")
-    params = StdioServerParameters(command="npx", args=["-y", "@exemplo/mcp"])
-    async with stdio_client(params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            comp = await g.acomplete("Use a ferramenta X", mcp_servers=[session])
-            print(comp.text)
+# --- agente MCP client-side (funciona em QUALQUER provider) ---
+async def agente_mcp():
+    g = LLM("openai", "gpt-4o-mini")   # ou anthropic/groq/gemini
+    async with MCPClient("https://meu-mcp/mcp/") as mcp:        # ou command=/args= (stdio)
+        ans = await run_agent(g, "Role uns dados", client=mcp)
+        print(ans.text)
 
 
-# asyncio.run(gemini_mcp())
+# asyncio.run(agente_mcp())
