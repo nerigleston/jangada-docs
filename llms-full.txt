@@ -446,12 +446,18 @@ comp = await llm.aparse("Extraia: ...", Pessoa)
 | Provider  | Mecanismo                                                |
 |-----------|----------------------------------------------------------|
 | OpenAI    | `chat.completions.parse(response_format=Modelo)`         |
-| Groq      | `response_format={"type":"json_schema",...}` + validação |
+| Groq      | `json_schema` quando o modelo suporta; senão **JSON Object mode** |
 | Gemini    | `config.response_schema=Modelo` → `resp.parsed`          |
 | Anthropic | tool-forcing (`tool_choice` fixo) → valida `tool_use`    |
 
 Você não precisa saber qual é qual — `parse()`/`aparse()` cuidam disso. Use
 Pydantic v2 (`model_json_schema()`, `model_validate`).
+
+> **Groq — funciona em qualquer modelo.** Só alguns modelos do Groq aceitam
+> `json_schema` (ex.: `openai/gpt-oss-*`, `llama-4-scout`). Para os demais (ex.:
+> `llama-3.3-70b-versatile`), a jangada **cai automaticamente para JSON Object
+> mode**: injeta o schema na instrução, pede um objeto JSON e valida com Pydantic.
+> Você chama `parse()` igual — sem saber o que o modelo suporta.
 
 Funciona junto com [Vision](vision.md) e [Documentos](documents.md): passe
 `images=` ou `files=` na mesma chamada `parse()`.
