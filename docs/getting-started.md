@@ -1,8 +1,12 @@
 # Começando com jangada
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nerigleston/jangada-docs/blob/main/examples/notebooks/jangada_quickstart.ipynb)
+
 `jangada` é uma camada fina sobre os SDKs oficiais de LLM (Anthropic, OpenAI,
 Groq, Gemini). O objetivo é trocar **provider / model / api_key** sem mudar o
 resto do código.
+
+> Quer só testar? Abra o **[quickstart no Colab](https://colab.research.google.com/github/nerigleston/jangada-docs/blob/main/examples/notebooks/jangada_quickstart.ipynb)** (1 clique, cole sua chave e rode).
 
 ## Instalação
 
