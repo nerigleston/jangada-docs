@@ -9,6 +9,7 @@ cada provider consegue fazer por baixo.
 | Texto (`complete`/`acomplete`)  | ✅     | ✅   | ✅     | ✅        |
 | Structured output (`parse`)     | ✅     | ✅   | ✅     | ✅        |
 | Tools / function calling        | ✅     | ✅   | ✅     | ✅        |
+| MCP (`mcp_servers=`)            | ✅ URL | ✅ URL | ✅ sessão⁴ | ✅ URL |
 | Embeddings (`embed`)            | ✅     | ❌   | ✅     | ❌        |
 | Streaming (`stream`/`astream`)  | ✅     | ✅   | ✅     | ✅        |
 | Vision / imagens (`images=`)    | ✅     | ⚠️¹  | ✅     | ✅        |
@@ -24,6 +25,8 @@ Llama vision); modelos de texto puro não aceitam imagem.
 ² `files=` extrai texto **localmente** (docx/pdf/csv/xlsx) e envia como texto —
 por isso funciona em todos. Veja [Documentos](documents.md).
 ³ A convenção de bounding box (0–1000) é nativa do Gemini, que é o mais preciso.
+⁴ MCP no Gemini é **client-side por sessão** e só no async (`acomplete`); os
+demais são **remoto por URL** (server-side). Veja [MCP](mcp.md).
 
 ## Como cada um implementa o structured output
 
