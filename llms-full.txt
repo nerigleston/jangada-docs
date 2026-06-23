@@ -536,6 +536,12 @@ llm.complete("Qual a cotação do dólar hoje?", tools=[tavily_search])
 > Parâmetros **keyword-only** (após `*`, como `api_key`/`timeout`) são config de
 > runtime e **não** aparecem no schema que o modelo vê.
 
+As tools que chamam API externa tratam **todos os casos de resposta**: rate
+limit (429, respeitando `Retry-After`), auth (401/403), 404, 5xx, timeout/
+conexão e corpo não-JSON. Erros transitórios (429/5xx/timeout) têm **retry leve
+com backoff**; ao esgotar, a tool **devolve uma mensagem de erro como texto**
+(em vez de levantar exceção), para o modelo decidir o que fazer.
+
 Veja também [Structured output](structured-output.md) (que no Anthropic já usa
 tool-forcing por baixo) e [Observabilidade](observability.md) (as tool calls
 aparecem no trace).
