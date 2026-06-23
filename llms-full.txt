@@ -992,8 +992,16 @@ As tabelas/coleções e índices são criados sozinhos no primeiro uso (`setup`)
 `mode="vector" | "text" | "hybrid"`:
 
 - **vector** — só similaridade do embedding.
-- **text** — só full-text/keyword.
+- **text** — lexical: **BM25** no store em memória (com `rank_bm25`; cai para
+  contagem de termos sem ele) e full-text nativo no pgvector (`tsvector`) / Mongo (`$text`).
 - **hybrid** — combina os dois por **Reciprocal Rank Fusion (RRF)**.
+
+O balanço vetorial × lexical sai de `weights=(vetorial, texto)` ou do atalho
+**`alpha`** (0 = só BM25/texto, 1 = só vetorial; `alpha` vira `weights=(alpha, 1-alpha)`):
+
+```python
+RAG(emb, store, chat=chat, alpha=0.5)   # equilíbrio; 0.0 = só BM25, 1.0 = só vetorial
+```
 
 ```python
 rag.search("backup incremental", k=5, mode="vector")   # só vetorial
