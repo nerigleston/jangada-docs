@@ -653,6 +653,53 @@ modelo é executado com `await mcp.call_tool(...)` e reenviado via
 `Message.tool_results(...)` — o mesmo [tool calling](tools.md) de sempre, no
 automático. Quer controle total? Use `MCPClient` + `tools=` na mão.
 
+## Primitivos completos do MCP (no `MCPClient`)
+
+Além de **tools**, o `MCPClient` cobre o resto do protocolo:
+
+```python
+async with MCPClient("https://meu-mcp/mcp/") as mcp:
+    # Resources — dados/contexto que o server expõe
+    recursos = await mcp.list_resources()
+    texto    = await mcp.resource_text("file:///guia.md")
+
+    # Prompts — templates reutilizáveis do server -> vira list[Message]
+    msgs = await mcp.prompt_messages("revisar", {"texto": "..."})
+    resp = await llm.acomplete(None, history=msgs)
+```
+
+E os **recursos de cliente** (o server chama o cliente de volta), configurados no
+construtor:
+
+```python
+from jangada_ai import LLM
+
+async with MCPClient(
+    command="python", args=["server.py"],
+    roots=["./workspace"],                       # escopo de filesystem (file://)
+    sampling_llm=LLM("openai", "gpt-4o-mini"),   # o server pede geração ao SEU LLM
+    elicitation_callback=meu_handler,            # o server pede input ao usuário
+    logging_callback=meu_logger,                 # logs do server
+) as mcp:
+    ...
+```
+
+- **Roots**: o server pergunta quais diretórios pode usar; o cliente responde a lista.
+- **Sampling**: o server pede uma geração de LLM (`sampling/createMessage`) e a
+  jangada executa com o seu `LLM` — o server fica model-independent e **você**
+  controla custo/permissões.
+- **Elicitation / Logging**: você passa um callback (`async`) que o SDK chama.
+
+| Primitivo | Métodos / config |
+|---|---|
+| Tools | `list_tools` / `call_tool` |
+| Resources | `list_resources` / `read_resource` / `resource_text` |
+| Prompts | `list_prompts` / `get_prompt` / `prompt_messages` |
+| Roots | `roots=[...]` |
+| Sampling | `sampling_llm=LLM(...)` |
+| Elicitation | `elicitation_callback=...` |
+| Logging | `logging_callback=...` / `set_logging_level(...)` |
+
 ## Exemplo
 
 [`examples/mcp_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/mcp_example.py) — script executável.
