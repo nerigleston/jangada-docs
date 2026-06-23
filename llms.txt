@@ -23,6 +23,7 @@ instalado.
 - [Anthropic](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-anthropic.md): modelos, recursos e o que o Claude NÃO faz (áudio).
 - [Parâmetros e perfis](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/parameters.md): params canônicos (temperature, max_tokens, ...) e normalização por modelo (gpt-5, gemini-3.x).
 - [Structured output](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/structured-output.md): `parse()`/`aparse()` com Pydantic, uniforme entre providers.
+- [Tools (function calling)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/tools.md): `tools=[...]` (OpenAI/Groq), baixo nível, e ferramentas pré-prontas (`jangada_ai.prebuilt`, ex.: tavily_search).
 - [Vision](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/vision.md): imagens via `ImagePart`/`Image`, tradução por SDK.
 - [Detecção de objetos](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/detect.md): `detect_objects()` com bounding boxes em pixels; funciona em qualquer provider com visão.
 - [Transcrição de áudio](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/audio.md): `transcribe()` (OpenAI, Groq, Gemini); Anthropic não suporta áudio.
