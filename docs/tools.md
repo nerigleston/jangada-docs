@@ -63,8 +63,26 @@ llm.complete("Qual a cotação do dólar hoje?", tools=[tavily_search])
 # execute: tavily_search(**call.args)  (precisa de TAVILY_API_KEY no ambiente)
 ```
 
-- **`tavily_search`** — busca web em tempo real (Tavily). Chave em
-  `TAVILY_API_KEY`, ou `tavily_tool(api_key=...)` para vincular a chave/parâmetros.
+**Sem dependência e sem chave:**
+
+| Tool | O que faz |
+|------|-----------|
+| `calculator` | avalia expressões aritméticas (seguro, via `ast`) |
+| `current_datetime` | data/hora atuais (fuso IANA) |
+| `fetch_url` | baixa uma página e devolve o texto legível |
+| `wikipedia_search` | resumo da Wikipedia (sem chave) |
+| `http_request` | requisição HTTP genérica (GET/POST/...) |
+
+**Com chave (lê do ambiente, ou passe `api_key=`):**
+
+| Tool | Chave |
+|------|-------|
+| `tavily_search` | `TAVILY_API_KEY` (ou `tavily_tool(api_key=...)`) |
+| `brave_search` | `BRAVE_API_KEY` |
+| `openweather` | `OPENWEATHER_API_KEY` |
+
+> Parâmetros **keyword-only** (após `*`, como `api_key`/`timeout`) são config de
+> runtime e **não** aparecem no schema que o modelo vê.
 
 Veja também [Structured output](structured-output.md) (que no Anthropic já usa
 tool-forcing por baixo) e [Observabilidade](observability.md) (as tool calls
