@@ -1,0 +1,89 @@
+# Tutorial: primeiros passos (do zero ao fallback)
+
+Um passo a passo de ~10 minutos: instalar, fazer a primeira chamada, trocar de
+provider sem mudar o código, usar templates e deixar tudo resiliente com
+fallback. Cada bloco é executável.
+
+## 1. Instalar
+
+Instale o núcleo + o SDK do provider que você vai usar (extras opcionais):
+
+```bash
+pip install "jangada-ai[openai]"     # ou [anthropic] / [groq] / [gemini] / [all]
+export OPENAI_API_KEY=sk-...
+```
+
+> `import jangada_ai` funciona sem nenhum SDK instalado — você só instala o extra
+> de quem for usar.
+
+## 2. Primeira chamada
+
+```python
+from jangada_ai import LLM
+
+llm = LLM("openai", "gpt-4o-mini")
+print(llm.complete("Explique o que é uma jangada em uma frase.").text)
+```
+
+`complete()` devolve um `Completion`. Além de `.text`, ele traz `.usage` (tokens),
+`.cost` (custo estimado), `.provider`, `.model` e o objeto nativo em `.raw`.
+
+## 3. Trocar de provider — o pitch
+
+A mesma chamada vale para os quatro. Só muda o par `(provider, modelo)`:
+
+```python
+LLM("anthropic", "claude-opus-4-8").complete("Oi!")
+LLM("groq", "llama-3.3-70b-versatile").complete("Oi!")
+LLM("gemini", "gemini-2.5-flash").complete("Oi!")
+```
+
+Você **não** muda mais nada — params, erros e custo são normalizados por baixo.
+Veja [Providers e chaves](providers.md).
+
+## 4. Templates `{{ }}`
+
+Em vez de montar strings na mão, passe variáveis como kwargs:
+
+```python
+llm.complete("Traduza para {{idioma}}: {{frase}}",
+             idioma="francês", frase="Bom dia")
+```
+
+## 5. Async
+
+Todo método tem versão `a*` equivalente:
+
+```python
+import asyncio
+
+async def main():
+    comp = await llm.acomplete("Diga olá.")
+    print(comp.text)
+
+asyncio.run(main())
+```
+
+## 6. Resiliência: retry + fallback
+
+Em produção, um provider pode dar rate limit ou 5xx. Defina um reserva:
+
+```python
+primario = LLM("openai", "gpt-4o-mini")
+reserva  = LLM("anthropic", "claude-haiku-4-5-20251001")
+
+llm = primario.with_fallback(reserva)
+comp = llm.complete("...")      # tenta o primário (com retries); se falhar, vai pro reserva
+print(comp.provider, comp.model, comp.cost)
+```
+
+A jangada tenta o primário com **backoff** e só cai pro reserva em erros
+"failover-able" (rate limit, timeout, 5xx, 404). Detalhes em
+[Retry e fallback](retry-fallback.md) e [Custo e tokens](cost.md).
+
+## Próximos passos
+
+- [Extração estruturada](tutorial-extracao-estruturada.md) — texto/imagem → Pydantic.
+- [RAG do zero](tutorial-rag.md) — responder com base nos seus documentos.
+- [Agente MCP do zero](tutorial-agente-mcp.md) — o modelo usando ferramentas sozinho.
+- Receitas completas em [`examples/cookbook/`](https://github.com/nerigleston/jangada/tree/master/examples/cookbook).

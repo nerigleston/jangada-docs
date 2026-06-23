@@ -12,6 +12,13 @@ resto da lib só conhece os tipos normalizados `Message` e `Completion`. Os
 imports dos SDKs são preguiçosos — `import jangada_ai` funciona sem nenhum SDK
 instalado.
 
+## Tutoriais (passo a passo)
+
+- [Primeiros passos](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/tutorial-primeiros-passos.md): do zero ao fallback — instalar, primeira chamada, trocar provider, templates, async, retry+fallback.
+- [Extração estruturada](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/tutorial-extracao-estruturada.md): texto e imagem → Pydantic com `parse()` (inclui vision).
+- [RAG do zero](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/tutorial-rag.md): embeddings + busca híbrida + resposta, em memória ou com pgvector/Mongo.
+- [Agente MCP do zero](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/tutorial-agente-mcp.md): `MCPClient` + `run_agent` — o modelo usando ferramentas sozinho.
+
 ## Documentação
 
 - [Começando](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/getting-started.md): instalação, primeira chamada e como trocar de provider.
