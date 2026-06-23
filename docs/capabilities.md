@@ -8,6 +8,7 @@ cada provider consegue fazer por baixo.
 |---------------------------------|:------:|:----:|:------:|:---------:|
 | Texto (`complete`/`acomplete`)  | ✅     | ✅   | ✅     | ✅        |
 | Structured output (`parse`)     | ✅     | ✅   | ✅     | ✅        |
+| Tools / function calling        | ✅     | ✅   | ✅     | ✅        |
 | Streaming (`stream`/`astream`)  | ✅     | ✅   | ✅     | ✅        |
 | Vision / imagens (`images=`)    | ✅     | ⚠️¹  | ✅     | ✅        |
 | Documentos (`files=`)²          | ✅     | ✅   | ✅     | ✅        |

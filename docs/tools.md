@@ -2,8 +2,8 @@
 
 O modelo pode pedir para chamar **ferramentas** (funções). A API é de **baixo
 nível**: o `complete()` devolve as chamadas pedidas em `Completion.tool_calls`,
-**você executa** e reenvia o resultado. Suportado em **OpenAI e Groq**
-(os outros providers virão).
+**você executa** e reenvia o resultado. Suportado em **OpenAI, Groq, Anthropic
+e Gemini** — a mesma interface nos quatro.
 
 ```python
 from jangada_ai import LLM, Message
