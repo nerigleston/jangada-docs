@@ -23,8 +23,9 @@ with obs.trace(name="resumo+tradução") as t:
 ## O que é capturado
 
 `t.log(completion)` extrai do `Completion`: `provider`, `model`,
-`promptTokens`/`completionTokens` (de `usage`), `costUsd` (de `cost`) e o texto
-de saída. Você pode complementar:
+`promptTokens`/`completionTokens` (de `usage`), `costUsd` (de `cost`), o texto
+de saída e as **tool calls** que o modelo pediu (`tools`: id/name/args). Você
+pode complementar:
 
 ```python
 t.log(r1, name="extração", input=prompt, latency_ms=820)
