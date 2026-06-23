@@ -93,3 +93,7 @@ com backoff**; ao esgotar, a tool **devolve uma mensagem de erro como texto**
 Veja também [Structured output](structured-output.md) (que no Anthropic já usa
 tool-forcing por baixo) e [Observabilidade](observability.md) (as tool calls
 aparecem no trace).
+
+## Exemplo
+
+[`examples/tools_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/tools_example.py) — script executável.

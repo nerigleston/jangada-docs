@@ -23,3 +23,7 @@ diferentes numa mesma orquestração ([Flow/Graph](flows.md)).
 
 Relacionado: [Retry e fallback](retry-fallback.md), [Custo e tokens](cost.md),
 [Erros](errors.md).
+
+## Exemplo
+
+[`examples/debug_params_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/debug_params_example.py) — script executável.

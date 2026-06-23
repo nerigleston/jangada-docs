@@ -27,3 +27,7 @@ Veja [Retry e fallback](retry-fallback.md) para a política completa.
   `files=` e `params=` das outras chamadas.
 - Para custo e tokens use as chamadas não-stream (`complete`/`parse`), que
   retornam `usage`/`cost` na resposta — veja [Custo e tokens](cost.md).
+
+## Exemplo
+
+[`examples/async_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/async_example.py) — script executável.

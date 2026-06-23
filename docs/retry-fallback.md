@@ -46,3 +46,7 @@ LLM(
 
 Os erros são normalizados (com `status_code`) — veja [Erros](errors.md). Para o
 custo agregado entre candidatos, veja [Custo e tokens](cost.md).
+
+## Exemplo
+
+[`examples/fallback_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/fallback_example.py) — script executável.

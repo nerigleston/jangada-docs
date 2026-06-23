@@ -53,3 +53,7 @@ Um PDF **sem** camada de texto (escaneado) levanta `DocumentError` sugerindo
   puro (`.txt`, `.md`, `.json`, ...).
 
 Relacionado: [Vision](vision.md), [Structured output](structured-output.md).
+
+## Exemplo
+
+[`examples/files_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/files_example.py) — script executável.

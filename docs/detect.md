@@ -59,3 +59,7 @@ Use sempre um modelo com visão. Veja também [Vision](vision.md) e
 
 As dimensões são lidas direto dos bytes (PNG, JPEG, GIF, BMP, WEBP) sem
 dependência externa. Para outros formatos, passe `image_size=(largura, altura)`.
+
+## Exemplo
+
+[`examples/detect_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/detect_example.py) — script executável.

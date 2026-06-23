@@ -40,3 +40,7 @@ Ordem aplicada no adapter: `_translate()` (canônico → nativo) →
 diferente, adicione uma regra em `profiles.py` em vez de espalhar `if`s.
 
 Veja [Providers](providers.md) e [Estendendo](extending.md).
+
+## Exemplo
+
+[`examples/model_profiles_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/model_profiles_example.py) — script executável.

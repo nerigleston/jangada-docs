@@ -32,3 +32,7 @@ print(price_for("gpt-4o-mini"))
 - `Completion.cost` / `Completion.usage` em cada chamada.
 - Totais agregados em [Fluxos e Graph](flows.md).
 - No [Debug passo a passo](debug.md), o custo de cada etapa é exibido no trace.
+
+## Exemplo
+
+[`examples/retry_cost_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/retry_cost_example.py) — script executável.

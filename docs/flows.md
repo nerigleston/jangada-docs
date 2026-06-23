@@ -46,3 +46,7 @@ os exemplos do pacote (`examples/graph_example.py`).
 `FlowResult` e `GraphResult` somam `usage` e `cost` de todas as etapas — útil
 para observabilidade. Detalhes em [Custo e tokens](cost.md) e, para inspecionar
 passo a passo, [Debug](debug.md).
+
+## Exemplo
+
+[`examples/graph_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/graph_example.py) — script executável.

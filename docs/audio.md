@@ -75,3 +75,7 @@ stt.transcribe("audio.mp3")   # tenta Groq; se falhar (5xx/timeout), vai pro Ope
 - OpenAI/Groq: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm — até ~25 MB.
 - Gemini: áudio inline até ~20 MB no total do request (use a Files API do SDK
   para arquivos maiores).
+
+## Exemplo
+
+[`examples/transcribe_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/transcribe_example.py) — script executável.

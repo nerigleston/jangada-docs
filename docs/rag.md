@@ -113,3 +113,7 @@ chunk_text(texto, size=1000, overlap=200)   # quebra sem cortar palavras
 
 Relacionado: [Documentos](documents.md) (extração de texto reaproveitada no RAG)
 e [Observabilidade](observability.md).
+
+## Exemplo
+
+[`examples/rag_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/rag_example.py) — script executável.

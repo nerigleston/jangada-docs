@@ -404,6 +404,10 @@ diferente, adicione uma regra em `profiles.py` em vez de espalhar `if`s.
 
 Veja [Providers](providers.md) e [Estendendo](extending.md).
 
+## Exemplo
+
+[`examples/model_profiles_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/model_profiles_example.py) — script executável.
+
 ---
 
 # Structured output (Pydantic)
@@ -448,6 +452,10 @@ Pydantic v2 (`model_json_schema()`, `model_validate`).
 
 Funciona junto com [Vision](vision.md) e [Documentos](documents.md): passe
 `images=` ou `files=` na mesma chamada `parse()`.
+
+## Exemplo
+
+[`examples/structured_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/structured_example.py) — script executável.
 
 ---
 
@@ -547,6 +555,10 @@ Veja também [Structured output](structured-output.md) (que no Anthropic já usa
 tool-forcing por baixo) e [Observabilidade](observability.md) (as tool calls
 aparecem no trace).
 
+## Exemplo
+
+[`examples/tools_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/tools_example.py) — script executável.
+
 ---
 
 # Vision (imagens)
@@ -583,6 +595,10 @@ Apenas bytes circulam (use `Image.from_path/bytes/base64`). Combine com
 Para **docx/pdf/csv/xlsx**, prefira [Documentos](documents.md): por padrão a
 jangada extrai o texto localmente (mais barato, funciona em modelo sem visão) e
 só usa vision quando você força `mode="vision"` ou quando o PDF é escaneado.
+
+## Exemplo
+
+[`examples/vision_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/vision_example.py) — script executável.
 
 ---
 
@@ -647,6 +663,10 @@ Use sempre um modelo com visão. Veja também [Vision](vision.md) e
 
 As dimensões são lidas direto dos bytes (PNG, JPEG, GIF, BMP, WEBP) sem
 dependência externa. Para outros formatos, passe `image_size=(largura, altura)`.
+
+## Exemplo
+
+[`examples/detect_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/detect_example.py) — script executável.
 
 ---
 
@@ -728,6 +748,10 @@ stt.transcribe("audio.mp3")   # tenta Groq; se falhar (5xx/timeout), vai pro Ope
 - Gemini: áudio inline até ~20 MB no total do request (use a Files API do SDK
   para arquivos maiores).
 
+## Exemplo
+
+[`examples/transcribe_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/transcribe_example.py) — script executável.
+
 ---
 
 # Documentos (docx, pdf, csv, xlsx)
@@ -785,6 +809,10 @@ Um PDF **sem** camada de texto (escaneado) levanta `DocumentError` sugerindo
   puro (`.txt`, `.md`, `.json`, ...).
 
 Relacionado: [Vision](vision.md), [Structured output](structured-output.md).
+
+## Exemplo
+
+[`examples/files_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/files_example.py) — script executável.
 
 ---
 
@@ -904,6 +932,10 @@ chunk_text(texto, size=1000, overlap=200)   # quebra sem cortar palavras
 Relacionado: [Documentos](documents.md) (extração de texto reaproveitada no RAG)
 e [Observabilidade](observability.md).
 
+## Exemplo
+
+[`examples/rag_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/rag_example.py) — script executável.
+
 ---
 
 # Streaming
@@ -935,6 +967,10 @@ Veja [Retry e fallback](retry-fallback.md) para a política completa.
   `files=` e `params=` das outras chamadas.
 - Para custo e tokens use as chamadas não-stream (`complete`/`parse`), que
   retornam `usage`/`cost` na resposta — veja [Custo e tokens](cost.md).
+
+## Exemplo
+
+[`examples/async_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/async_example.py) — script executável.
 
 ---
 
@@ -987,6 +1023,10 @@ LLM(
 Os erros são normalizados (com `status_code`) — veja [Erros](errors.md). Para o
 custo agregado entre candidatos, veja [Custo e tokens](cost.md).
 
+## Exemplo
+
+[`examples/fallback_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/fallback_example.py) — script executável.
+
 ---
 
 # Custo e tokens
@@ -1023,6 +1063,10 @@ print(price_for("gpt-4o-mini"))
 - `Completion.cost` / `Completion.usage` em cada chamada.
 - Totais agregados em [Fluxos e Graph](flows.md).
 - No [Debug passo a passo](debug.md), o custo de cada etapa é exibido no trace.
+
+## Exemplo
+
+[`examples/retry_cost_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/retry_cost_example.py) — script executável.
 
 ---
 
@@ -1168,6 +1212,10 @@ os exemplos do pacote (`examples/graph_example.py`).
 para observabilidade. Detalhes em [Custo e tokens](cost.md) e, para inspecionar
 passo a passo, [Debug](debug.md).
 
+## Exemplo
+
+[`examples/graph_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/graph_example.py) — script executável.
+
 ---
 
 # Debug passo a passo
@@ -1195,6 +1243,10 @@ diferentes numa mesma orquestração ([Flow/Graph](flows.md)).
 
 Relacionado: [Retry e fallback](retry-fallback.md), [Custo e tokens](cost.md),
 [Erros](errors.md).
+
+## Exemplo
+
+[`examples/debug_params_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/debug_params_example.py) — script executável.
 
 ---
 

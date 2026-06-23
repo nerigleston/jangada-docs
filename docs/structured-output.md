@@ -40,3 +40,7 @@ Pydantic v2 (`model_json_schema()`, `model_validate`).
 
 Funciona junto com [Vision](vision.md) e [Documentos](documents.md): passe
 `images=` ou `files=` na mesma chamada `parse()`.
+
+## Exemplo
+
+[`examples/structured_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/structured_example.py) — script executável.
