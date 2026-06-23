@@ -939,6 +939,9 @@ pode complementar:
 ```python
 t.log(r1, name="extração", input=prompt, latency_ms=820)
 t.log(error="timeout ao chamar o modelo")   # registra falha
+
+# tool calls + o resultado que VOCÊ executou (casa por id, senão por name):
+t.log(comp, tool_results={"get_weather": "25°C", "somar": 3})
 ```
 
 ## Detalhes
