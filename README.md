@@ -18,6 +18,12 @@ Groq, Gemini): troque provider/model/api_key sem mudar o resto do código.
 pip install jangada-ai      # o pacote importado segue: import jangada
 ```
 
+## Exemplos
+
+Scripts prontos por recurso em [`examples/`](examples/): texto/fallback,
+structured output, vision, detecção, áudio, documentos, tools, observability e
+RAG.
+
 ## Para LLMs
 
 - [`llms.txt`](llms.txt) — índice curto e curado, com links para cada guia.
