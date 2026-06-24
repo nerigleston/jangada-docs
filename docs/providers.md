@@ -1,14 +1,47 @@
 # Providers e chaves de API
 
-A jangada suporta quatro providers, cada um isolado em um *adapter* que traduz
+A jangada suporta cinco providers, cada um isolado em um *adapter* que traduz
 os tipos normalizados (`Message`/`Completion`) para o SDK nativo.
 
-| Provider    | `provider=` | Variável de ambiente | Extra para instalar         |
-|-------------|-------------|----------------------|-----------------------------|
-| Anthropic   | `anthropic` | `ANTHROPIC_API_KEY`  | `jangada-ai[anthropic]`     |
-| OpenAI      | `openai`    | `OPENAI_API_KEY`     | `jangada-ai[openai]`        |
-| Groq        | `groq`      | `GROQ_API_KEY`       | `jangada-ai[groq]`          |
-| Gemini      | `gemini`    | `GEMINI_API_KEY`     | `jangada-ai[gemini]`        |
+| Provider    | `provider=`  | Variável de ambiente | Extra para instalar         |
+|-------------|--------------|----------------------|-----------------------------|
+| Anthropic   | `anthropic`  | `ANTHROPIC_API_KEY`  | `jangada-ai[anthropic]`     |
+| OpenAI      | `openai`     | `OPENAI_API_KEY`     | `jangada-ai[openai]`        |
+| Groq        | `groq`       | `GROQ_API_KEY`       | `jangada-ai[groq]`          |
+| Gemini      | `gemini`     | `GEMINI_API_KEY`     | `jangada-ai[gemini]`        |
+| OpenRouter  | `openrouter` | `OPENROUTER_API_KEY` | `jangada-ai[openai]`        |
+
+## OpenRouter (gateway para centenas de modelos)
+
+[OpenRouter](https://openrouter.ai) é um *gateway* compatível com o dialeto
+`chat.completions` da OpenAI — por isso reusa o **mesmo SDK `openai`** (extra
+`jangada-ai[openai]`), só apontando para outro `base_url`. Dá acesso a centenas
+de modelos de vários provedores com uma única chave.
+
+```python
+LLM("openrouter", "openai/gpt-4o")                       # usa OPENROUTER_API_KEY
+LLM("openrouter", "anthropic/claude-sonnet-4.6")
+LLM("openrouter", "google/gemini-2.5-flash", api_key="sk-or-...")
+```
+
+O modelo é **qualificado por provedor** (`provedor/modelo`). Cabeçalhos opcionais
+de ranking vão pelo cliente; argumentos exclusivos do OpenRouter (ex.: `models`
+para roteamento com fallback) vão por `extra=`:
+
+```python
+LLM(
+    "openrouter", "openai/gpt-4o",
+    default_headers={"HTTP-Referer": "https://meusite.com", "X-Title": "Meu App"},
+    extra={"models": ["openai/gpt-4o", "anthropic/claude-sonnet-4.6"]},
+)
+```
+
+Suporta texto, streaming, structured output (json_schema com fallback automático
+para JSON Object mode), vision, tools/function calling, **transcrição de áudio**
+(modelos `openai/whisper-*`, `openai/gpt-4o-transcribe`, ...) e **embeddings**
+(`openai/text-embedding-3-*`, `google/gemini-embedding-001`, `qwen/qwen3-embedding-*`,
+...). O único recurso não suportado é **MCP server-side**: ele depende da Responses
+API da OpenAI, que o OpenRouter não expõe — esse caminho levanta `UnsupportedError`.
 
 ## Resolução da chave
 
@@ -27,6 +60,7 @@ O `.env` é detectado de forma não-destrutiva na importação (desative com
 - **Groq**: `response_format={"type":"json_schema",...}` + `model_validate_json`
 - **Gemini**: `config.response_schema=Modelo` → `resp.parsed`
 - **Anthropic**: tool-forcing (`tool_choice` fixo) → valida `tool_use.input`
+- **OpenRouter**: igual ao Groq (json_schema com fallback p/ JSON Object mode)
 
 Veja [Structured output](structured-output.md) para o uso uniforme.
 
