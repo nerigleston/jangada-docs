@@ -34,6 +34,7 @@ instalado.
 - [MCP (Model Context Protocol)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/mcp.md): `mcp_servers=[...]` — remoto por URL (Anthropic/OpenAI/Groq, server-side) e client-side por sessão (Gemini, async).
 - [Vision](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/vision.md): imagens via `ImagePart`/`Image`, tradução por SDK.
 - [Detecção de objetos](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/detect.md): `detect_objects()` com bounding boxes em pixels; funciona em qualquer provider com visão.
+- [Step-back prompting](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/stepback.md): `step_back()` gera uma pergunta conceitualmente mais ampla a partir de uma específica, para recuperar contexto amplo em RAG; funciona em qualquer provider.
 - [Transcrição de áudio](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/audio.md): `transcribe()` (OpenAI, Groq, Gemini); Anthropic não suporta áudio.
 - [Documentos (docx/pdf/csv/xlsx)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/documents.md): `files=` com extração de texto por padrão (vision só opt-in); xlsx multi-aba.
 - [RAG (embeddings + busca vetorial/híbrida)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/rag.md): `embed()` (OpenAI/Gemini), módulo `jangada_ai.rag` com chunking, vector store (pgvector/Mongo por string de conexão) e busca híbrida (RRF).
