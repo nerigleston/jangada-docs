@@ -48,6 +48,7 @@ instalado.
 - [Guardrails de escopo](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/guardrails.md): `ScopeGuard` mantém a LLM num domínio e barra falas (blocklist + judge LLM); recusa via `Completion`, input/output, sync/async.
 - [Debug](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/debug.md): trace passo a passo por agente.
 - [Estendendo (novo provider)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/extending.md): contrato `Provider`, atalho `_OpenAICompatible` e invariantes.
+- [Melhores práticas](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/best-practices.md): recomendações de produção — provider/model, structured output, guardrails, RAG, retry/fallback, custo, agentes, transcrição (vídeo/mp4) e async/FastAPI.
 
 ## Referência
 
