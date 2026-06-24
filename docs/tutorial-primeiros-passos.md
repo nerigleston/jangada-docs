@@ -86,4 +86,4 @@ A jangada tenta o primário com **backoff** e só cai pro reserva em erros
 - [Extração estruturada](tutorial-extracao-estruturada.md) — texto/imagem → Pydantic.
 - [RAG do zero](tutorial-rag.md) — responder com base nos seus documentos.
 - [Agente MCP do zero](tutorial-agente-mcp.md) — o modelo usando ferramentas sozinho.
-- Receitas completas em [`examples/cookbook/`](https://github.com/nerigleston/jangada/tree/master/examples/cookbook).
+- Receitas completas em [`examples/cookbook/`](https://github.com/nerigleston/jangada-docs/tree/main/examples/cookbook).

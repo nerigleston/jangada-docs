@@ -39,7 +39,7 @@ res = g.run(...)        # GraphResult agrega usage/cost
 ```
 
 Veja os exemplos executáveis em
-os exemplos do pacote (`examples/graph_example.py`).
+[`examples/graph_example.py`](https://github.com/nerigleston/jangada-docs/blob/main/examples/graph_example.py).
 
 ## Custo agregado
 

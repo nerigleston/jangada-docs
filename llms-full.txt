@@ -158,7 +158,7 @@ A jangada tenta o primário com **backoff** e só cai pro reserva em erros
 - [Extração estruturada](tutorial-extracao-estruturada.md) — texto/imagem → Pydantic.
 - [RAG do zero](tutorial-rag.md) — responder com base nos seus documentos.
 - [Agente MCP do zero](tutorial-agente-mcp.md) — o modelo usando ferramentas sozinho.
-- Receitas completas em [`examples/cookbook/`](https://github.com/nerigleston/jangada/tree/master/examples/cookbook).
+- Receitas completas em [`examples/cookbook/`](https://github.com/nerigleston/jangada-docs/tree/main/examples/cookbook).
 
 ---
 
@@ -232,7 +232,7 @@ for provider, modelo in [("openai", "gpt-4o-mini"),
 
 ## Próximos passos
 
-- Receita completa: [`examples/cookbook/01_extracao_nota_fiscal.py`](https://github.com/nerigleston/jangada/blob/master/examples/cookbook/01_extracao_nota_fiscal.py).
+- Receita completa: [`examples/cookbook/01_extracao_nota_fiscal.py`](https://github.com/nerigleston/jangada-docs/blob/main/examples/cookbook/01_extracao_nota_fiscal.py).
 - Referência: [Structured output](structured-output.md) e [Vision](vision.md).
 - Para documentos (docx/pdf/xlsx) sem vision, veja [Documentos](documents.md).
 
@@ -310,7 +310,7 @@ O resto do código continua igual. Ajustes finos (`min_score`, `filter`, `weight
 
 ## Próximos passos
 
-- Receita completa: [`examples/cookbook/03_chatbot_rag.py`](https://github.com/nerigleston/jangada/blob/master/examples/cookbook/03_chatbot_rag.py).
+- Receita completa: [`examples/cookbook/03_chatbot_rag.py`](https://github.com/nerigleston/jangada-docs/blob/main/examples/cookbook/03_chatbot_rag.py).
 - Referência detalhada: [RAG](rag.md).
 
 ---
@@ -386,7 +386,7 @@ E recursos de **cliente** (o server chama de volta): `roots=[...]`,
 
 ## Próximos passos
 
-- Receita completa: [`examples/cookbook/02_agente_mcp.py`](https://github.com/nerigleston/jangada/blob/master/examples/cookbook/02_agente_mcp.py).
+- Receita completa: [`examples/cookbook/02_agente_mcp.py`](https://github.com/nerigleston/jangada-docs/blob/main/examples/cookbook/02_agente_mcp.py).
 - Referência detalhada: [MCP](mcp.md) e [Tools](tools.md).
 
 ---
@@ -1728,7 +1728,7 @@ res = g.run(...)        # GraphResult agrega usage/cost
 ```
 
 Veja os exemplos executáveis em
-os exemplos do pacote (`examples/graph_example.py`).
+[`examples/graph_example.py`](https://github.com/nerigleston/jangada-docs/blob/main/examples/graph_example.py).
 
 ## Custo agregado
 
@@ -2038,4 +2038,4 @@ class MeuProvider(_OpenAICompatible):
 ## Testes
 
 Use o padrão de `FakeProvider` registrado em runtime; veja
-o módulo `tests/conftest.py` do pacote.
+[`tests/conftest.py`](https://github.com/nerigleston/jangada-docs/blob/main/tests/conftest.py).

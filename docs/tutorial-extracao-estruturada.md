@@ -68,6 +68,6 @@ for provider, modelo in [("openai", "gpt-4o-mini"),
 
 ## Próximos passos
 
-- Receita completa: [`examples/cookbook/01_extracao_nota_fiscal.py`](https://github.com/nerigleston/jangada/blob/master/examples/cookbook/01_extracao_nota_fiscal.py).
+- Receita completa: [`examples/cookbook/01_extracao_nota_fiscal.py`](https://github.com/nerigleston/jangada-docs/blob/main/examples/cookbook/01_extracao_nota_fiscal.py).
 - Referência: [Structured output](structured-output.md) e [Vision](vision.md).
 - Para documentos (docx/pdf/xlsx) sem vision, veja [Documentos](documents.md).

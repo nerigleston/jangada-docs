@@ -70,5 +70,5 @@ O resto do código continua igual. Ajustes finos (`min_score`, `filter`, `weight
 
 ## Próximos passos
 
-- Receita completa: [`examples/cookbook/03_chatbot_rag.py`](https://github.com/nerigleston/jangada/blob/master/examples/cookbook/03_chatbot_rag.py).
+- Receita completa: [`examples/cookbook/03_chatbot_rag.py`](https://github.com/nerigleston/jangada-docs/blob/main/examples/cookbook/03_chatbot_rag.py).
 - Referência detalhada: [RAG](rag.md).

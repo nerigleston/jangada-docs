@@ -69,5 +69,5 @@ E recursos de **cliente** (o server chama de volta): `roots=[...]`,
 
 ## Próximos passos
 
-- Receita completa: [`examples/cookbook/02_agente_mcp.py`](https://github.com/nerigleston/jangada/blob/master/examples/cookbook/02_agente_mcp.py).
+- Receita completa: [`examples/cookbook/02_agente_mcp.py`](https://github.com/nerigleston/jangada-docs/blob/main/examples/cookbook/02_agente_mcp.py).
 - Referência detalhada: [MCP](mcp.md) e [Tools](tools.md).

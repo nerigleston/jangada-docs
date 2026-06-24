@@ -57,3 +57,5 @@ instalado.
 
 ## Optional
 
+- [Exemplos executáveis](https://github.com/nerigleston/jangada-docs/tree/main/examples): scripts por recurso (vision, structured, fallback, graph, async, debug).
+- [Testes](https://github.com/nerigleston/jangada-docs/tree/main/tests): suíte com `FakeProvider` e fixtures de documento.

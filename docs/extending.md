@@ -57,4 +57,4 @@ class MeuProvider(_OpenAICompatible):
 ## Testes
 
 Use o padrão de `FakeProvider` registrado em runtime; veja
-o módulo `tests/conftest.py` do pacote.
+[`tests/conftest.py`](https://github.com/nerigleston/jangada-docs/blob/main/tests/conftest.py).
