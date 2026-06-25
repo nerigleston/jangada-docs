@@ -121,6 +121,29 @@ A **lógica do protocolo** vive em `A2AHandler` (Python puro, testável sem rede
 servidor ASGI importa Starlette só aqui. O histórico fica em memória por padrão —
 passe `A2AHandler(agent, store=meu_dict)` para plugar persistência.
 
+### Multi-tenant: agente resolvido por request
+
+Em vez de um agente fixo, passe um **`resolver`** que recebe o **contexto da
+requisição** (headers/auth) e devolve o `Agent` certo para aquele request — útil
+quando o agente é montado por tenant (ex.: tools com closure no `tenant_id` do
+JWT). Com `tenant_key`, o histórico fica **isolado por tenant**.
+
+```python
+def resolver(ctx):                       # ctx = {"headers": {...}, "auth": "Bearer ..."}
+    tenant = (ctx.get("auth") or "").removeprefix("Bearer ")
+    return build_sofia(tenant_id=tenant)
+
+handler = A2AHandler(resolver=resolver, name="Sofia",
+                     tenant_key=lambda c: c.get("auth", ""))
+app = build_a2a_app(handler)             # extrai o contexto do request por padrão
+```
+
+Tudo é opcional (o modo fixo `A2AHandler(agent)` segue igual). Os parâmetros:
+`resolver` (exclui `agent`), `name` (obrigatório com `resolver`), `description`,
+`tenant_key` (isola histórico), e `context_factory=` no `build_a2a_app` (como
+montar o contexto a partir do `Request` — troque para validar/decodificar o JWT).
+A lib **não** decodifica JWT: o contexto traz os headers crus e o `Authorization`.
+
 ## Memória de longo prazo (RAG)
 
 `RAGMemory` dá ao agente memória persistente sobre um `RAG`: antes de responder

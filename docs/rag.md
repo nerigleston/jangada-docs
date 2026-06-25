@@ -65,6 +65,23 @@ for s in resposta.sources:
 
 As tabelas/coleções e índices são criados sozinhos no primeiro uso (`setup`).
 
+### Busca textual em português (pgvector)
+
+O `PgVectorStore` usa a configuração `'simple'` do Postgres por padrão (sem
+stemming nem stopwords). Para conteúdo em **português**, passe
+`text_config="portuguese"` — melhora a parte lexical da busca híbrida (stemming PT
++ stopwords):
+
+```python
+from jangada_ai.rag import vector_store
+
+store = vector_store("postgresql://...", text_config="portuguese")
+```
+
+A config é fixada na **criação** da tabela (a coluna `tsv` é GENERATED), então
+defina-a antes do primeiro `setup`. Vale qualquer `regconfig` do Postgres
+(`english`, `spanish`, ...).
+
 ## Modos de busca
 
 `mode="vector" | "text" | "hybrid"`:

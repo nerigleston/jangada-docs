@@ -1475,6 +1475,23 @@ for s in resposta.sources:
 
 As tabelas/coleções e índices são criados sozinhos no primeiro uso (`setup`).
 
+### Busca textual em português (pgvector)
+
+O `PgVectorStore` usa a configuração `'simple'` do Postgres por padrão (sem
+stemming nem stopwords). Para conteúdo em **português**, passe
+`text_config="portuguese"` — melhora a parte lexical da busca híbrida (stemming PT
++ stopwords):
+
+```python
+from jangada_ai.rag import vector_store
+
+store = vector_store("postgresql://...", text_config="portuguese")
+```
+
+A config é fixada na **criação** da tabela (a coluna `tsv` é GENERATED), então
+defina-a antes do primeiro `setup`. Vale qualquer `regconfig` do Postgres
+(`english`, `spanish`, ...).
+
 ## Modos de busca
 
 `mode="vector" | "text" | "hybrid"`:
@@ -2008,6 +2025,29 @@ Para um time descobrível, passe uma lista: `build_a2a_app([sofia_h, orcamento_h
 A **lógica do protocolo** vive em `A2AHandler` (Python puro, testável sem rede); o
 servidor ASGI importa Starlette só aqui. O histórico fica em memória por padrão —
 passe `A2AHandler(agent, store=meu_dict)` para plugar persistência.
+
+### Multi-tenant: agente resolvido por request
+
+Em vez de um agente fixo, passe um **`resolver`** que recebe o **contexto da
+requisição** (headers/auth) e devolve o `Agent` certo para aquele request — útil
+quando o agente é montado por tenant (ex.: tools com closure no `tenant_id` do
+JWT). Com `tenant_key`, o histórico fica **isolado por tenant**.
+
+```python
+def resolver(ctx):                       # ctx = {"headers": {...}, "auth": "Bearer ..."}
+    tenant = (ctx.get("auth") or "").removeprefix("Bearer ")
+    return build_sofia(tenant_id=tenant)
+
+handler = A2AHandler(resolver=resolver, name="Sofia",
+                     tenant_key=lambda c: c.get("auth", ""))
+app = build_a2a_app(handler)             # extrai o contexto do request por padrão
+```
+
+Tudo é opcional (o modo fixo `A2AHandler(agent)` segue igual). Os parâmetros:
+`resolver` (exclui `agent`), `name` (obrigatório com `resolver`), `description`,
+`tenant_key` (isola histórico), e `context_factory=` no `build_a2a_app` (como
+montar o contexto a partir do `Request` — troque para validar/decodificar o JWT).
+A lib **não** decodifica JWT: o contexto traz os headers crus e o `Authorization`.
 
 ## Memória de longo prazo (RAG)
 
