@@ -88,6 +88,23 @@ duplicatas; valores fora da lista também são aceitos):
 t.log(r, capabilities=["rag", "structured_output"])
 ```
 
+## No dashboard
+
+Em [app.jangada.dev.br](https://app.jangada.dev.br) você acompanha tudo:
+
+- **Traces e detalhe** — cada lote e suas observations (provider, modelo, tokens,
+  custo, latência, tool calls e capacidades), em tabela ou waterfall.
+- **Analytics** — custo, chamadas, tokens, taxa de erro e latência (p50/p95/p99),
+  com quebra por modelo, provider e capacidade e série temporal por dia.
+- **Filtros e exportação** — filtre por modelo, provider, erros, datas,
+  userId/sessionId, custo mínimo e capacidade; exporte em CSV/JSON.
+- **Live tail** — traces em tempo real, com pausar/retomar.
+- **Anomalias** — avisos automáticos quando custo/latência/erro fogem do
+  baseline de 7 dias.
+- **Alertas** — regras de custo diário ou taxa de erro.
+- **Scores** — avaliações por trace (feedback humano ou LLM-as-judge).
+- **Orçamento** — teto de custo mensal por projeto, com acompanhamento e projeção.
+
 ## Detalhes
 
 - `trace(id=...)`: informe um id externo para **acrescentar** observations ao
