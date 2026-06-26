@@ -49,9 +49,11 @@ sync e async (usa `contextvars`).
 
 ## O que é capturado
 
-De cada `Completion`: `provider`, `model`, `promptTokens`/`completionTokens` (de
-`usage`), `costUsd` (de `cost`), o texto de saída e as **tool calls** que o modelo
-pediu (`tools`: id/name/args).
+De cada chamada: `provider`, `model`, `promptTokens`/`completionTokens` (de
+`usage`), `costUsd` (de `cost`), latência, o **input** (as mensagens enviadas ao
+modelo — system/user/assistant em texto, conteúdos muito longos são truncados), o
+**output** (texto da resposta) e as **tool calls** que o modelo pediu (`tools`:
+id/name/args).
 
 ## Capacidades (capabilities)
 
