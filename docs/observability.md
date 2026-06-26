@@ -1,9 +1,43 @@
 # Observabilidade (envio de traces)
 
-`Observability`/`Trace` enviam as chamadas de uma request, agrupadas em um
-**lote** (trace), para uma plataforma de observabilidade. Numa request que faz
-N chamadas de IA, abre-se 1 trace e registram-se N observations — um único POST
-ao final.
+A jangada envia as suas chamadas de LLM para uma plataforma de observabilidade
+de dois jeitos: **automático** (zero-config, via `.env`) ou **manual** (agrupando
+N chamadas num lote). Em ambos, cada chamada vira uma _observation_ com
+provider, modelo, tokens, custo, latência, erro, tool calls e as **capacidades**
+de IA usadas.
+
+## Modo automático (zero-config)
+
+Sem instrumentar nada no código: preencha o `.env` do seu projeto e pronto — a
+cada `complete`/`parse` (e versões async) a jangada envia **um trace por
+chamada**, em background (não bloqueia a sua aplicação).
+
+```bash
+# .env
+JANGADA_OBSERVABILITY=true
+JANGADA_OBSERVABILITY_API_KEY=lobs_xxx        # chave do projeto (dashboard)
+# opcional (padrão é a plataforma oficial):
+# JANGADA_OBSERVABILITY_ENDPOINT=https://api.jangada.dev.br
+```
+
+```python
+from jangada_ai import LLM
+
+llm = LLM("openai", "gpt-4o-mini")
+resp = llm.complete("Resuma: ...")   # já enviado à plataforma, sozinho
+```
+
+A flag precisa ser "truthy" (`1`/`true`/`yes`/`on`/`sim`) **e** o token presente;
+faltando qualquer um, o modo fica desligado e nada é enviado (custo zero). Falhas
+de rede nunca derrubam a aplicação — o envio é best-effort numa thread daemon.
+
+> O modo automático manda **uma chamada por trace** (sem agrupar). Para juntar
+> várias chamadas de uma request num único lote, use o modo manual abaixo.
+
+## Modo manual (lotes)
+
+`Observability`/`Trace` agrupam as chamadas de uma request num **lote** (trace)
+e enviam tudo num único POST ao final do `with`:
 
 ```python
 import os
@@ -33,6 +67,25 @@ t.log(error="timeout ao chamar o modelo")   # registra falha
 
 # tool calls + o resultado que VOCÊ executou (casa por id, senão por name):
 t.log(comp, tool_results={"get_weather": "25°C", "somar": 3})
+```
+
+## Capacidades (capabilities)
+
+Cada observation registra **quais capacidades de IA** foram usadas — `tools`,
+`mcp`, `a2a`, `vision`, `audio`, `documents`, `rag`, `structured_output`,
+`guardrails`, `cache`, `agents`, `embeddings`. No dashboard viram **badges**,
+**filtro** e a quebra **Analytics → Uso por capacidade**.
+
+No **modo automático**, a jangada detecta sozinha a partir dos argumentos da
+chamada: `images=` → `vision`, `files=` → `documents`, `tools=` → `tools`,
+`mcp_servers=` → `mcp`, `parse()` → `structured_output`, `guardrails` →
+`guardrails`. `tools` também é derivado quando o modelo pede tool calls.
+
+No **modo manual**, marque o que quiser no `t.log(...)` (normalizado e sem
+duplicatas; valores fora da lista também são aceitos):
+
+```python
+t.log(r, capabilities=["rag", "structured_output"])
 ```
 
 ## Detalhes
