@@ -1755,19 +1755,14 @@ cacheada preserva `parsed`, `usage` e `cost`). O cache é **local ao processo** 
 
 ---
 
-# Observabilidade (envio de traces)
+# Observabilidade (automática)
 
-A jangada envia as suas chamadas de LLM para uma plataforma de observabilidade
-de dois jeitos: **automático** (zero-config, via `.env`) ou **manual** (agrupando
-N chamadas num lote). Em ambos, cada chamada vira uma _observation_ com
-provider, modelo, tokens, custo, latência, erro, tool calls e as **capacidades**
-de IA usadas.
+A jangada envia as suas chamadas de LLM para a plataforma de observabilidade de
+forma **automática** (zero-config): basta configurar o `.env`. Cada chamada vira
+uma _observation_ com provider, modelo, tokens, custo, latência, tool calls e as
+**capacidades** de IA usadas — enviada em background, sem instrumentar o código.
 
-## Modo automático (zero-config)
-
-Sem instrumentar nada no código: preencha o `.env` do seu projeto e pronto — a
-cada `complete`/`parse` (e versões async) a jangada envia **um trace por
-chamada**, em background (não bloqueia a sua aplicação).
+## Ativar (zero-config)
 
 ```bash
 # .env
@@ -1788,43 +1783,32 @@ A flag precisa ser "truthy" (`1`/`true`/`yes`/`on`/`sim`) **e** o token presente
 faltando qualquer um, o modo fica desligado e nada é enviado (custo zero). Falhas
 de rede nunca derrubam a aplicação — o envio é best-effort numa thread daemon.
 
-> O modo automático manda **uma chamada por trace** (sem agrupar). Para juntar
-> várias chamadas de uma request num único lote, use o modo manual abaixo.
+## Agrupar por lote
 
-## Modo manual (lotes)
-
-`Observability`/`Trace` agrupam as chamadas de uma request num **lote** (trace)
-e enviam tudo num único POST ao final do `with`:
+Por padrão cada chamada vira um trace próprio. Para agrupar várias chamadas de
+uma request no **mesmo lote** (mesmo sendo enviadas uma a uma), abra um escopo
+com `observability_session`: um id de lote é gerado e todas as chamadas de dentro
+o compartilham — o backend as agrupa no mesmo trace.
 
 ```python
-import os
-from jangada_ai import LLM, Observability
+from jangada_ai import LLM, observability_session
 
-obs = Observability(api_key=os.environ["LOBS_API_KEY"], endpoint="https://sua-api")
 llm = LLM("openai", "gpt-4o-mini")
 
-with obs.trace(name="resumo+tradução") as t:
-    r1 = llm.complete("Resuma: ...")
-    t.log(r1)
-    r2 = llm.complete("Traduza: ...")
-    t.log(r2)
-# flush automático -> 1 POST com as 2 observations
+with observability_session(name="resumo+tradução", user_id="cliente-123"):
+    r1 = llm.complete("Resuma: ...")     # observation no mesmo trace
+    r2 = llm.complete("Traduza: ...")    # idem — agrupadas pelo id do lote
 ```
+
+`observability_session` aceita `id` (reaproveita um id externo), `name`,
+`user_id`, `session_id` e `metadata`, e devolve o id do lote. Funciona em código
+sync e async (usa `contextvars`).
 
 ## O que é capturado
 
-`t.log(completion)` extrai do `Completion`: `provider`, `model`,
-`promptTokens`/`completionTokens` (de `usage`), `costUsd` (de `cost`), o texto
-de saída e as **tool calls** que o modelo pediu (`tools`: id/name/args). Você
-pode complementar:
-
-```python
-t.log(r1, name="extração", input=prompt, latency_ms=820)
-t.log(error="timeout ao chamar o modelo")   # registra falha
-
-# tool calls + o resultado que VOCÊ executou (casa por id, senão por name):
-t.log(comp, tool_results={"get_weather": "25°C", "somar": 3})
-```
+De cada `Completion`: `provider`, `model`, `promptTokens`/`completionTokens` (de
+`usage`), `costUsd` (de `cost`), o texto de saída e as **tool calls** que o modelo
+pediu (`tools`: id/name/args).
 
 ## Capacidades (capabilities)
 
@@ -1833,17 +1817,10 @@ Cada observation registra **quais capacidades de IA** foram usadas — `tools`,
 `guardrails`, `cache`, `agents`, `embeddings`. No dashboard viram **badges**,
 **filtro** e a quebra **Analytics → Uso por capacidade**.
 
-No **modo automático**, a jangada detecta sozinha a partir dos argumentos da
-chamada: `images=` → `vision`, `files=` → `documents`, `tools=` → `tools`,
-`mcp_servers=` → `mcp`, `parse()` → `structured_output`, `guardrails` →
-`guardrails`. `tools` também é derivado quando o modelo pede tool calls.
-
-No **modo manual**, marque o que quiser no `t.log(...)` (normalizado e sem
-duplicatas; valores fora da lista também são aceitos):
-
-```python
-t.log(r, capabilities=["rag", "structured_output"])
-```
+A detecção é automática a partir dos argumentos da chamada: `images=` → `vision`,
+`files=` → `documents`, `tools=` → `tools`, `mcp_servers=` → `mcp`, `parse()` →
+`structured_output`, `guardrails` → `guardrails`. `tools` também é derivado
+quando o modelo pede tool calls.
 
 ## No dashboard
 
@@ -1864,14 +1841,10 @@ Em [app.jangada.dev.br](https://app.jangada.dev.br) você acompanha tudo:
 
 ## Detalhes
 
-- `trace(id=...)`: informe um id externo para **acrescentar** observations ao
-  mesmo lote em chamadas separadas (idempotente no backend).
-- `user_id` / `session_id` / `metadata`: contexto do usuário final do seu app.
-- Falhas de rede **não derrubam** sua aplicação (`raise_on_error=False` por
-  padrão); o erro vai para o stderr.
-- A `api_key` é a chave do projeto, configurada no `.env` do seu projeto.
-
-Os campos de custo/tokens vêm de [Custo e tokens](cost.md).
+- A `api_key` é a chave do projeto, gerada no dashboard e configurada no `.env`.
+- Reusar o mesmo id de lote (via `observability_session(id=...)`) **acrescenta**
+  observations ao mesmo trace de forma idempotente no backend.
+- Os campos de custo/tokens vêm de [Custo e tokens](cost.md).
 
 ---
 

@@ -11,7 +11,7 @@ reais + um cabeçalho explicando o que faz.
 | 03 | [Chatbot RAG](03_chatbot_rag.py) | embeddings + busca híbrida (BM25+vetorial) + resposta | `[openai,rag]` |
 | 04 | [Fallback multi-provider](04_fallback_multiprovider.py) | trocar provider + retry/fallback + custo | 2 providers |
 | 05 | [Transcrição + resumo](05_transcricao_resumo.py) | áudio → texto → resumo encadeado (`Flow`) | `[groq,openai]` + áudio |
-| 06 | [Observabilidade](06_observabilidade_trace.py) | `Observability`/`Trace`: lote de chamadas | `LOBS_*` no `.env` |
+| 06 | [Observabilidade](06_observabilidade.py) | Automática (zero-config) + `observability_session` p/ agrupar | `JANGADA_OBSERVABILITY*` no `.env` |
 
 ## Como rodar
 
