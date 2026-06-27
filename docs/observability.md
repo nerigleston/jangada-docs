@@ -47,6 +47,30 @@ with observability_session(name="resumo+tradução", user_id="cliente-123"):
 `user_id`, `session_id` e `metadata`, e devolve o id do lote. Funciona em código
 sync e async (usa `contextvars`).
 
+## Feedback de produção
+
+Capture a reação do usuário final (👍/👎 ou um score) e anexe ao trace com
+`feedback()`. Use o **id do lote** devolvido por `observability_session`. É
+**best-effort** (nunca derruba a app): devolve `True` se enviou, `False` se faltou
+chave ou deu erro de rede.
+
+```python
+from jangada_ai import LLM, observability_session, feedback
+
+llm = LLM("openai", "gpt-4o-mini")
+
+with observability_session(name="suporte") as trace_id:
+    resp = llm.complete("Como emito uma NF?")
+
+# mais tarde, quando o usuário avaliar a resposta:
+feedback(trace_id, 1, comment="resolveu meu problema")   # 👍
+# feedback(trace_id, -1, comment="resposta errada")      # 👎
+```
+
+O feedback vira um `Score` no trace (origem `api`), aparece no dashboard junto dos
+👍/👎 humanos e fecha o loop: um 👎 pode ser **promovido a exemplo** de dataset
+(pelo dashboard) e virar caso de regressão nas [evals](eval.md).
+
 ## O que é capturado
 
 De cada chamada: `provider`, `model`, `promptTokens`/`completionTokens` (de
