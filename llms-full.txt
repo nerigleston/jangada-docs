@@ -835,9 +835,16 @@ comp = llm.parse("Extraia: João tem 30 anos.", Pessoa)
 print(comp.parsed.nome, comp.parsed.idade)   # João 30
 ```
 
-- `comp.parsed` → a instância Pydantic.
+- `comp.parsed` → a instância Pydantic. **Confiável**: se algum SDK devolver
+  `parsed=None` com JSON válido em `.text`, a jangada valida o texto pelo schema
+  automaticamente (você não precisa fazer `model_validate_json` à mão).
 - `comp.text` → o JSON bruto retornado.
 - `comp.usage` / `comp.cost` → tokens e custo estimado.
+
+> 🔁 **JSON fora do schema → failover.** Se a saída não casar com o modelo, a
+> jangada levanta `errors.OutputValidationError` e **tenta o próximo modelo** do
+> `with_fallback` (não repete o mesmo — daria o mesmo JSON). Assim o fallback
+> cobre tanto erro de API quanto resposta malformada.
 
 > ⚠️ `max_tokens` tem default de **1024**. Em listas grandes a resposta pode ser
 > cortada; nesse caso a jangada levanta `errors.TruncatedError` ("aumente
@@ -2121,14 +2128,18 @@ Todas herdam de `errors.LLMError`. As principais categorias:
 | `ConnectionError`    | falha de conexão                   | sim              |
 | `ServerError`        | 5xx                                | sim              |
 | `NotFoundError`      | 404 (modelo/endpoint)              | sim (sem retry)  |
+| `OutputValidationError` | `parse()` com JSON fora do schema | sim (sem retry)  |
 | `AuthError`          | 401/403                            | **não**          |
 | `BadRequestError`    | 400 (params inválidos)             | **não**          |
+| `TruncatedError`     | resposta cortada (`max_tokens`)    | **não** (suba `max_tokens`) |
 
 ## Conjuntos usados pela política
 
 - `errors.TRANSIENT` — o que dispara **retry com backoff** (rate limit, timeout,
   conexão, 5xx).
-- `errors.DEFAULT_FAILOVER` — o que dispara **fallback** (os transitórios + 404).
+- `errors.DEFAULT_FAILOVER` — o que dispara **fallback** (os transitórios + 404 +
+  `OutputValidationError`). Saída fora do schema tenta o **próximo modelo** (sem
+  repetir o mesmo, que daria o mesmo JSON).
   Não inclui `auth` nem `bad_request` por padrão.
 
 Você pode customizar `retry_on=` e `backoff_on=` por `LLM` — veja
@@ -2621,9 +2632,13 @@ item aponta para o guia detalhado da capacidade correspondente.
 
 - **Valide sempre contra o schema.** Use `parse()`/`aparse()` com um modelo
   Pydantic; não confie em parsing manual de texto.
-- **Tenha um fallback de coerção.** Em alguns SDKs `completion.parsed` pode vir
-  `None` mesmo com JSON válido em `completion.text`. Caia para
-  `Model.model_validate_json(completion.text)` nesse caso.
+- **`comp.parsed` é confiável** — a jangada já faz a coerção: se algum SDK
+  devolver `parsed=None` com JSON válido em `.text`, a lib valida o texto pelo
+  schema automaticamente (você não precisa do `model_validate_json` manual).
+- **JSON fora do schema entra no failover.** Se a saída não casar com o modelo,
+  a jangada levanta `errors.OutputValidationError` e **tenta o próximo modelo**
+  do `with_fallback` (outro pode acertar). Não repete o mesmo modelo (seria o
+  mesmo JSON). Ou seja: o fallback cobre tanto erro de API quanto saída malformada.
 - Campos opcionais com `default=None` evitam que o modelo invente valores quando
   o dado não existe. Veja [Structured output](structured-output.md).
 

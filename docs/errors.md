@@ -26,14 +26,18 @@ Todas herdam de `errors.LLMError`. As principais categorias:
 | `ConnectionError`    | falha de conexão                   | sim              |
 | `ServerError`        | 5xx                                | sim              |
 | `NotFoundError`      | 404 (modelo/endpoint)              | sim (sem retry)  |
+| `OutputValidationError` | `parse()` com JSON fora do schema | sim (sem retry)  |
 | `AuthError`          | 401/403                            | **não**          |
 | `BadRequestError`    | 400 (params inválidos)             | **não**          |
+| `TruncatedError`     | resposta cortada (`max_tokens`)    | **não** (suba `max_tokens`) |
 
 ## Conjuntos usados pela política
 
 - `errors.TRANSIENT` — o que dispara **retry com backoff** (rate limit, timeout,
   conexão, 5xx).
-- `errors.DEFAULT_FAILOVER` — o que dispara **fallback** (os transitórios + 404).
+- `errors.DEFAULT_FAILOVER` — o que dispara **fallback** (os transitórios + 404 +
+  `OutputValidationError`). Saída fora do schema tenta o **próximo modelo** (sem
+  repetir o mesmo, que daria o mesmo JSON).
   Não inclui `auth` nem `bad_request` por padrão.
 
 Você pode customizar `retry_on=` e `backoff_on=` por `LLM` — veja

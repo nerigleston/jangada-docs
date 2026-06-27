@@ -16,9 +16,16 @@ comp = llm.parse("Extraia: João tem 30 anos.", Pessoa)
 print(comp.parsed.nome, comp.parsed.idade)   # João 30
 ```
 
-- `comp.parsed` → a instância Pydantic.
+- `comp.parsed` → a instância Pydantic. **Confiável**: se algum SDK devolver
+  `parsed=None` com JSON válido em `.text`, a jangada valida o texto pelo schema
+  automaticamente (você não precisa fazer `model_validate_json` à mão).
 - `comp.text` → o JSON bruto retornado.
 - `comp.usage` / `comp.cost` → tokens e custo estimado.
+
+> 🔁 **JSON fora do schema → failover.** Se a saída não casar com o modelo, a
+> jangada levanta `errors.OutputValidationError` e **tenta o próximo modelo** do
+> `with_fallback` (não repete o mesmo — daria o mesmo JSON). Assim o fallback
+> cobre tanto erro de API quanto resposta malformada.
 
 > ⚠️ `max_tokens` tem default de **1024**. Em listas grandes a resposta pode ser
 > cortada; nesse caso a jangada levanta `errors.TruncatedError` ("aumente
