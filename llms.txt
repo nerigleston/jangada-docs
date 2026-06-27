@@ -26,21 +26,21 @@ instalado.
 - [Matriz de capacidades](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/capabilities.md): o que cada provider suporta (vision, áudio, structured, params).
 - [OpenAI](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-openai.md): modelos, recursos e quirks do provider OpenAI.
 - [Groq](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-groq.md): modelos, recursos e quirks do provider Groq.
-- [Gemini](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-gemini.md): modelos, recursos e quirks do provider Gemini.
+- [Gemini](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-gemini.md): modelos, recursos e quirks; thinking transparente (você passa só `thinking_budget`/`thinking_level` e a lib adapta à versão, empacotando no `thinking_config` nativo).
 - [Anthropic](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-anthropic.md): modelos, recursos e o que o Claude NÃO faz (áudio).
-- [Parâmetros e perfis](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/parameters.md): params canônicos (temperature, max_tokens, ...) e normalização por modelo (gpt-5, gemini-3.x).
-- [Structured output](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/structured-output.md): `parse()`/`aparse()` com Pydantic, uniforme entre providers.
+- [Parâmetros e perfis](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/parameters.md): params canônicos (temperature, max_tokens, ...) e normalização por modelo (gpt-5, gemini-3.x); thinking do Gemini via `extra=`/`params=`.
+- [Structured output](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/structured-output.md): `parse()`/`aparse()` com Pydantic, uniforme entre providers; trunca por max_tokens levanta `TruncatedError` (erro claro, não JSON cortado).
 - [Tools (function calling)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/tools.md): `tools=[...]` (OpenAI/Groq), baixo nível, e ferramentas pré-prontas (`jangada_ai.prebuilt`, ex.: tavily_search).
 - [MCP (Model Context Protocol)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/mcp.md): `mcp_servers=[...]` — remoto por URL (Anthropic/OpenAI/Groq, server-side) e client-side por sessão (Gemini, async).
-- [Vision](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/vision.md): imagens via `ImagePart`/`Image`, tradução por SDK.
-- [Detecção de objetos](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/detect.md): `detect_objects()` com bounding boxes em pixels; funciona em qualquer provider com visão.
+- [Vision](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/vision.md): imagens via `ImagePart`/`Image`, tradução por SDK; `images=[("rótulo", img)]` para rotular cada imagem; controle total via `Message`/`history`.
+- [Detecção de objetos](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/detect.md): `detect_objects()` com bounding boxes em pixels; `detect_objects_full()` devolve também custo/uso (`DetectionResult`); funciona em qualquer provider com visão.
 - [Step-back prompting](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/stepback.md): `step_back()` gera uma pergunta conceitualmente mais ampla a partir de uma específica, para recuperar contexto amplo em RAG; funciona em qualquer provider.
 - [Transcrição de áudio](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/audio.md): `transcribe()` (OpenAI, Groq, Gemini); Anthropic não suporta áudio.
 - [Documentos (docx/pdf/csv/xlsx)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/documents.md): `files=` com extração de texto por padrão (vision só opt-in); xlsx multi-aba.
 - [RAG (embeddings + busca vetorial/híbrida)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/rag.md): `embed()` (OpenAI/Gemini), módulo `jangada_ai.rag` com chunking, vector store (pgvector/Mongo por string de conexão) e busca híbrida (RRF).
 - [Streaming](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/streaming.md): `stream()`/`astream()` com retry+fallback antes do primeiro token.
 - [Retry e fallback](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/retry-fallback.md): backoff por candidato e failover por tipo de erro.
-- [Custo e tokens](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/cost.md): `usage`/`cost` na resposta e tabela de preços aproximada.
+- [Custo e tokens](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/cost.md): `usage`/`cost` na resposta e tabela de preços aproximada; imagem já conta como input tokens, áudio por minuto (`register_audio_price`), `detect_objects_full` expõe custo.
 - [Cache de respostas](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/cache.md): `ExactCache` (LRU/TTL) e `SemanticCache` (similaridade via embeddings + `vector_store`) plugados em `LLM(..., cache=...)`; economiza tokens/latência.
 - [Observabilidade](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/observability.md): observabilidade automática (zero-config via .env) — cada chamada envia um trace; `observability_session` agrupa por lote.
 - [Erros normalizados](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/errors.md): hierarquia única via `classify()` e conjuntos TRANSIENT/DEFAULT_FAILOVER.
@@ -49,7 +49,12 @@ instalado.
 - [Guardrails de escopo](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/guardrails.md): `ScopeGuard` mantém a LLM num domínio e barra falas (blocklist + judge LLM); recusa via `Completion`, input/output, sync/async.
 - [Debug](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/debug.md): trace passo a passo por agente.
 - [Estendendo (novo provider)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/extending.md): contrato `Provider`, atalho `_OpenAICompatible` e invariantes.
-- [Melhores práticas](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/best-practices.md): recomendações de produção — provider/model, structured output, guardrails, RAG, retry/fallback, custo, agentes, transcrição (vídeo/mp4) e async/FastAPI.
+- [Melhores práticas](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/best-practices.md): recomendações de produção — provider/model, structured output, guardrails, RAG, retry/fallback, custo, cache, orquestração, agentes, transcrição (vídeo/mp4), async/FastAPI e pontos de atenção (contratos da lib).
+
+## Migração e exemplos
+
+- [Migração do LangChain](https://docs.jangada.dev.br/docs/migration-langchain): guia capacidade-por-capacidade de como cada coisa é feita no jangada vindo do LangChain (padrão próprio, não comparativo) + diferenciais e dependências.
+- [Exemplos de código](https://docs.jangada.dev.br/docs/examples): apps FastAPI completos por cenário — assistente com tools, escritor com cache, fiscal-vision (visão+structured), pesquisa com agentes/Squad/MCP, reunião (áudio→ata via Flow) e suporte com RAG.
 
 ## Referência
 
