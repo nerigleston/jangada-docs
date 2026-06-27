@@ -187,6 +187,41 @@ rag.sync_document("manual.pdf", name="manual")
 # {'added': 3, 'removed': 1, 'unchanged': 42}  -> só os 3 novos foram embedados
 ```
 
+## Qual recurso usar? (resumo)
+
+Todos são **opt-in** — a lib funciona sem nenhum. Some-os conforme a necessidade:
+
+| Quero… | Use | Custo extra |
+|--------|-----|-------------|
+| Melhorar muito a ordem dos trechos | `reranker=Reranker.cohere()` | 1 chamada de rerank |
+| Pegar sinônimos/perguntas vagas | `strategy="multi_query"` | N buscas + 1 LLM |
+| Contexto melhor sem perder precisão | `parent_chunk_size=` + `strategy="parent_document"` | — |
+| Reduzir tokens de contexto | `compress=True` | 1 LLM por trecho |
+| Chunks que não cortam ideias | `chunker=semantic_chunker(emb)` | embeddings no índice |
+| Reindexar barato (só o que mudou) | `sync_document(...)` | — |
+
+Receita recomendada para produção: **semantic chunking** (índice) +
+**reranker** (busca). Acrescente **multi-query** se as perguntas forem vagas.
+
+Exemplo combinando tudo:
+
+```python
+from jangada_ai import LLM
+from jangada_ai.rag import RAG, Reranker, semantic_chunker, vector_store
+
+emb = LLM("openai", "text-embedding-3-small")
+rag = RAG(
+    emb, vector_store("postgresql://..."), chat=LLM("openai", "gpt-4o-mini"),
+    chunker=semantic_chunker(emb),     # índice por assunto
+    reranker=Reranker.cohere(),        # ordem por relevância
+)
+rag.sync_document("manual.pdf", name="manual")          # incremental
+ans = rag.ask("Como faço backup?", strategy="multi_query", compress=True)
+```
+
+POC executável com todos os recursos lado a lado:
+[`pocs/rag-advanced-poc`](https://github.com/nerigleston/jangada).
+
 ## Chunking
 
 ```python
