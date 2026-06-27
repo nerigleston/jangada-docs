@@ -20,12 +20,25 @@ registrar/ajustar:
 ```python
 from jangada_ai import register_price, price_for
 
-register_price("meu-modelo", input=0.5, output=1.5)   # USD por 1M tokens
+register_price("meu-modelo", 0.5, 1.5)   # USD por 1M tokens (input, output)
 print(price_for("gpt-4o-mini"))
 ```
 
 > ⚠️ Os valores são **aproximados** e servem para estimativa/observabilidade —
 > não trate como fonte de billing.
+
+## Custo multimodal
+
+- **Imagem (vision)**: não há preço separado — os providers já contam os tokens da
+  imagem dentro de `input_tokens`. O custo da imagem já sai pela tabela normal.
+- **Áudio (transcrição)**: cobrado **por minuto**, não por token. O custo só sai
+  quando o `usage` traz a duração (`audio_seconds`): passe
+  `response_format="verbose_json"` na transcrição **ou** informe a duração em
+  `Audio.from_bytes(dados, mime, duration=...)`. Registre/ajuste com
+  `register_audio_price("whisper-1", 0.006)` (USD por minuto).
+- **Detecção** (`detect_objects`/`adetect_objects`): retorna `Detection`, não
+  `Completion` — o custo da chamada interna **não** é exposto. Use um modelo
+  flash/lite; se precisar do custo, chame `llm.parse(...)` direto e leia `.cost`.
 
 ## Onde isso aparece
 

@@ -32,12 +32,15 @@ Modelos do mesmo provider às vezes têm contratos diferentes. A jangada normali
 isso em `profiles.py`, **por modelo**, sem você precisar saber:
 
 - `gpt-5` rejeita `temperature` (HTTP 400) e exige `max_completion_tokens`.
-- `gemini-3.x` descarta `temperature`/`top_p`/`top_k` e troca `thinking_budget`
-  por `thinking_level`.
+- `gemini-3.x` descarta `temperature`/`top_p`/`top_k`.
+- **Thinking do Gemini**: você passa só `thinking_budget` (ou `thinking_level`) e
+  a lib adapta — no 2.5 vira `thinking_budget`, no 3.x vira `thinking_level` —,
+  empacotando no `thinking_config` nativo. Ver [Gemini](llm-gemini.md).
 
 Ordem aplicada no adapter: `_translate()` (canônico → nativo) →
-`apply_profile()` (quirks de modelo). Ao suportar um modelo novo com contrato
-diferente, adicione uma regra em `profiles.py` em vez de espalhar `if`s.
+`apply_profile()` (quirks de modelo) → empacota `thinking_config`. Ao suportar um
+modelo novo com contrato diferente, adicione uma regra em `profiles.py` em vez de
+espalhar `if`s.
 
 Veja [Providers](providers.md) e [Estendendo](extending.md).
 

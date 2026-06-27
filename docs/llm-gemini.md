@@ -35,12 +35,32 @@ llm = LLM("gemini", "gemini-2.5-flash")
   `stop`→`stop_sequences`; `temperature`/`top_p`/`top_k`/`seed` passam direto.
   É o único provider com `top_k`.
 - **Perfil de modelo** (`profiles.py`): `gemini-3.x` descarta sampling
-  (`temperature`/`top_p`/`top_k`) e usa `thinking_level` no lugar de
-  `thinking_budget`. Function calling multi-turn no 3.x exige preservar as
-  *thought signatures* (integridade do histórico). Veja
+  (`temperature`/`top_p`/`top_k`). Function calling multi-turn no 3.x exige
+  preservar as *thought signatures* (integridade do histórico). Veja
   [Parâmetros e perfis](parameters.md).
 - **Resposta** (`Completion`): `usage` vem de `usage_metadata`
   (`prompt_token_count`/`candidates_token_count`).
+
+## Thinking (raciocínio) — você passa só `thinking_budget`
+
+O Gemini tem duas convenções incompatíveis: o **2.5** só aceita `thinking_budget`
+(em tokens) e o **3.x** só aceita `thinking_level` (`LOW`/`HIGH`) — misturar dá
+HTTP 400. A jangada resolve por você: passe **`thinking_budget`** (ou
+`thinking_level`) e a lib adapta ao modelo, empacotando no `thinking_config`
+nativo por baixo dos panos.
+
+```python
+# Funciona igual nas duas versões — você não muda nada:
+LLM("gemini", "gemini-2.5-flash").complete("...", params={"thinking_budget": 1024})
+LLM("gemini", "gemini-3-pro").complete("...",  params={"thinking_budget": 1024})
+# no 2.5 vira thinking_config(thinking_budget=1024);
+# no 3.x o perfil converte para thinking_config(thinking_level="HIGH").
+```
+
+- `thinking_budget`: `0` desliga (quando o modelo permite), `-1` é automático.
+- No 3.x o budget é aproximado para um nível válido (`LOW` se ≤0, senão `HIGH`);
+  no 2.5 um `thinking_level` é convertido para budget. Um `thinking_config` pronto
+  é respeitado como veio.
 
 ## Por que é o "canivete suíço" aqui
 

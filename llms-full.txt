@@ -658,12 +658,32 @@ llm = LLM("gemini", "gemini-2.5-flash")
   `stop`→`stop_sequences`; `temperature`/`top_p`/`top_k`/`seed` passam direto.
   É o único provider com `top_k`.
 - **Perfil de modelo** (`profiles.py`): `gemini-3.x` descarta sampling
-  (`temperature`/`top_p`/`top_k`) e usa `thinking_level` no lugar de
-  `thinking_budget`. Function calling multi-turn no 3.x exige preservar as
-  *thought signatures* (integridade do histórico). Veja
+  (`temperature`/`top_p`/`top_k`). Function calling multi-turn no 3.x exige
+  preservar as *thought signatures* (integridade do histórico). Veja
   [Parâmetros e perfis](parameters.md).
 - **Resposta** (`Completion`): `usage` vem de `usage_metadata`
   (`prompt_token_count`/`candidates_token_count`).
+
+## Thinking (raciocínio) — você passa só `thinking_budget`
+
+O Gemini tem duas convenções incompatíveis: o **2.5** só aceita `thinking_budget`
+(em tokens) e o **3.x** só aceita `thinking_level` (`LOW`/`HIGH`) — misturar dá
+HTTP 400. A jangada resolve por você: passe **`thinking_budget`** (ou
+`thinking_level`) e a lib adapta ao modelo, empacotando no `thinking_config`
+nativo por baixo dos panos.
+
+```python
+# Funciona igual nas duas versões — você não muda nada:
+LLM("gemini", "gemini-2.5-flash").complete("...", params={"thinking_budget": 1024})
+LLM("gemini", "gemini-3-pro").complete("...",  params={"thinking_budget": 1024})
+# no 2.5 vira thinking_config(thinking_budget=1024);
+# no 3.x o perfil converte para thinking_config(thinking_level="HIGH").
+```
+
+- `thinking_budget`: `0` desliga (quando o modelo permite), `-1` é automático.
+- No 3.x o budget é aproximado para um nível válido (`LOW` se ≤0, senão `HIGH`);
+  no 2.5 um `thinking_level` é convertido para budget. Um `thinking_config` pronto
+  é respeitado como veio.
 
 ## Por que é o "canivete suíço" aqui
 
@@ -757,12 +777,15 @@ Modelos do mesmo provider às vezes têm contratos diferentes. A jangada normali
 isso em `profiles.py`, **por modelo**, sem você precisar saber:
 
 - `gpt-5` rejeita `temperature` (HTTP 400) e exige `max_completion_tokens`.
-- `gemini-3.x` descarta `temperature`/`top_p`/`top_k` e troca `thinking_budget`
-  por `thinking_level`.
+- `gemini-3.x` descarta `temperature`/`top_p`/`top_k`.
+- **Thinking do Gemini**: você passa só `thinking_budget` (ou `thinking_level`) e
+  a lib adapta — no 2.5 vira `thinking_budget`, no 3.x vira `thinking_level` —,
+  empacotando no `thinking_config` nativo. Ver [Gemini](llm-gemini.md).
 
 Ordem aplicada no adapter: `_translate()` (canônico → nativo) →
-`apply_profile()` (quirks de modelo). Ao suportar um modelo novo com contrato
-diferente, adicione uma regra em `profiles.py` em vez de espalhar `if`s.
+`apply_profile()` (quirks de modelo) → empacota `thinking_config`. Ao suportar um
+modelo novo com contrato diferente, adicione uma regra em `profiles.py` em vez de
+espalhar `if`s.
 
 Veja [Providers](providers.md) e [Estendendo](extending.md).
 
@@ -1668,12 +1691,25 @@ registrar/ajustar:
 ```python
 from jangada_ai import register_price, price_for
 
-register_price("meu-modelo", input=0.5, output=1.5)   # USD por 1M tokens
+register_price("meu-modelo", 0.5, 1.5)   # USD por 1M tokens (input, output)
 print(price_for("gpt-4o-mini"))
 ```
 
 > ⚠️ Os valores são **aproximados** e servem para estimativa/observabilidade —
 > não trate como fonte de billing.
+
+## Custo multimodal
+
+- **Imagem (vision)**: não há preço separado — os providers já contam os tokens da
+  imagem dentro de `input_tokens`. O custo da imagem já sai pela tabela normal.
+- **Áudio (transcrição)**: cobrado **por minuto**, não por token. O custo só sai
+  quando o `usage` traz a duração (`audio_seconds`): passe
+  `response_format="verbose_json"` na transcrição **ou** informe a duração em
+  `Audio.from_bytes(dados, mime, duration=...)`. Registre/ajuste com
+  `register_audio_price("whisper-1", 0.006)` (USD por minuto).
+- **Detecção** (`detect_objects`/`adetect_objects`): retorna `Detection`, não
+  `Completion` — o custo da chamada interna **não** é exposto. Use um modelo
+  flash/lite; se precisar do custo, chame `llm.parse(...)` direto e leia `.cost`.
 
 ## Onde isso aparece
 
