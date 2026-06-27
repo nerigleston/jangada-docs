@@ -55,6 +55,11 @@ modelo — system/user/assistant em texto, conteúdos muito longos são truncado
 **output** (texto da resposta) e as **tool calls** que o modelo pediu (`tools`:
 id/name/args).
 
+Cada observation tem um **status**: `OK`, ou **`INCOMPLETE`** quando a resposta
+foi cortada por limite de tokens (`finish_reason == "length"`). O motivo de parada
+normalizado também é enviado em **`finishReason`**. No dashboard isso vira um badge
+(âmbar para incompleto) e entra no filtro de status.
+
 ## Capacidades (capabilities)
 
 Cada observation registra **quais capacidades de IA** foram usadas — `tools`,
