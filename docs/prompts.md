@@ -69,6 +69,21 @@ No painel (aba *Prompts* → o prompt → **Tornar produção** numa versão ant
 a tag `production` volta para aquela versão — **sem deploy**. O próximo `pull`
 já pega a versão restaurada.
 
+## Rastrear no trace ("qual prompt gerou isso?")
+
+Envolva as chamadas em `with p.use():` — cada trace registra qual **prompt e
+versão** o gerou (aparece no painel, no detalhe da chamada, com link para o
+prompt).
+
+```python
+p = PromptVersion.pull("assistente-fiscal")
+with p.use():
+    resp = llm.complete(p.render(tema="ICMS"))   # o trace sabe: assistente-fiscal v2
+```
+
+É opt-in: sem o `with`, nada muda. Precisa da observabilidade ligada
+(`JANGADA_OBSERVABILITY=true`).
+
 ## Por que usar
 
 - **Histórico + rollback** sem mexer no código nem fazer deploy.
