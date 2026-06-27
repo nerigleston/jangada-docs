@@ -1625,11 +1625,42 @@ rag.search("backup?", filter={"tenant": "acme"}, mode="vector")
 - **`max_context_chars`** corta os trechos que não couberem (mantém ao menos um).
 - **`weights=(v, t)`** pondera os rankings vetorial e de texto na fusão RRF.
 
+## Estratégias avançadas de retrieval (opt-in)
+
+Passe `strategy=` no `search`/`ask`. Padrão: busca simples (continua igual).
+
+- **multi-query** — o LLM gera variações da pergunta, busca todas e funde por RRF
+  (pega sinônimos/ângulos). `rag.ask(q, strategy="multi_query")`.
+- **parent-document** — indexe filhos pequenos (precisos) guardando o trecho-pai
+  grande; a busca devolve o pai (melhor contexto):
+  ```python
+  rag.add_document("manual.pdf", parent_chunk_size=4000)   # filhos + pai
+  rag.ask("Como faço X?", strategy="parent_document")
+  ```
+- **contextual compression** — após buscar, o LLM extrai de cada trecho só o
+  relevante (encolhe o contexto/custo): `rag.ask(q, compress=True)`.
+
+Combinam entre si e com o `reranker=`.
+
+## Indexação incremental
+
+`sync_document`/`sync_texts` reindexam **só o que mudou** (dedup por hash do
+conteúdo): embeda os chunks novos e remove os que sumiram. Requer `document_id`
+e um store com suporte (memória hoje; pgvector/Mongo: usar `add_*`).
+
+```python
+rag.sync_document("manual.pdf", name="manual")
+# {'added': 3, 'removed': 1, 'unchanged': 42}  -> só os 3 novos foram embedados
+```
+
 ## Chunking
 
 ```python
-from jangada_ai.rag import chunk_text
-chunk_text(texto, size=1000, overlap=200)   # quebra sem cortar palavras
+from jangada_ai.rag import chunk_text, semantic_chunker
+chunk_text(texto, size=1000, overlap=200)        # padrão: tamanho fixo, sem cortar palavras
+
+# semantic chunking (opt-in): quebra por similaridade, não por tamanho
+RAG(emb, store, chunker=semantic_chunker(emb))   # frases do mesmo assunto ficam juntas
 ```
 
 Relacionado: [Documentos](documents.md) (extração de texto reaproveitada no RAG)
