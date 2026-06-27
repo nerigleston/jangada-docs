@@ -1159,6 +1159,10 @@ Requer o extra `jangada-ai[mcp]`; para HTTP, também `starlette` + um servidor A
 > `serve_mcp`/`build_mcp_app`/`build_mcp_server` = **lado servidor**. O `MCPClient`
 > (acima) é o **lado cliente**. São complementares.
 
+**Exemplo pronto:** [`jangada-docs-mcp`](https://github.com/nerigleston/jangada-docs-mcp)
+é um servidor MCP (feito com `serve_mcp`) que expõe toda a documentação do jangada
+ao seu editor — rode sem clonar: `uvx --from git+https://github.com/nerigleston/jangada-docs-mcp jangada-docs-mcp`.
+
 ## Exemplo
 
 - [`examples/mcp_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/mcp_example.py) — cliente MCP.
