@@ -37,6 +37,22 @@ isso em `profiles.py`, **por modelo**, sem você precisar saber:
   a lib adapta — no 2.5 vira `thinking_budget`, no 3.x vira `thinking_level` —,
   empacotando no `thinking_config` nativo. Ver [Gemini](llm-gemini.md).
 
+`thinking_budget`/`thinking_level` **não são** kwargs do construtor: um kwarg solto
+cairia em `client_kwargs` (vai para o `genai.Client`, lugar errado). Passe por
+`extra=` no construtor **ou** por `params=` na chamada:
+
+```python
+# no construtor (vale para todas as chamadas deste LLM)
+llm = LLM("gemini", "gemini-3.5", extra={"thinking_level": "LOW"})
+
+# por chamada (sobrescreve só nesta)
+llm.complete("...", params={"thinking_budget": 1024})
+```
+
+Não misture as duas convenções no mesmo valor (ex.: `thinking_level=500` é erro —
+`thinking_level` é enum `LOW`/`HIGH`; `500` seria um `thinking_budget`). É
+justamente o que a lib evita: escolha uma e ela traduz para o que o modelo aceita.
+
 Ordem aplicada no adapter: `_translate()` (canônico → nativo) →
 `apply_profile()` (quirks de modelo) → empacota `thinking_config`. Ao suportar um
 modelo novo com contrato diferente, adicione uma regra em `profiles.py` em vez de

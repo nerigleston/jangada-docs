@@ -61,6 +61,12 @@ LLM("gemini", "gemini-3-pro").complete("...",  params={"thinking_budget": 1024})
 - No 3.x o budget é aproximado para um nível válido (`LOW` se ≤0, senão `HIGH`);
   no 2.5 um `thinking_level` é convertido para budget. Um `thinking_config` pronto
   é respeitado como veio.
+- **Níveis aceitos**: `thinking_level` reconhece `MINIMAL`/`LOW`/`MEDIUM`/`HIGH`.
+  Como **entrada no 2.5** os quatro são convertidos para um `thinking_budget`
+  (`0`/`1024`/`8192`/`24576`). Já **direto no 3.x**, o Gemini só aceita `LOW` e
+  `HIGH` de forma universal (`MINIMAL` é só Flash/Lite e `MEDIUM` só no 3.0 Flash;
+  passá-los como nível em outros 3.x dá HTTP 400) — por isso a conversão
+  budget→level da lib usa apenas `LOW`/`HIGH`.
 
 ## Por que é o "canivete suíço" aqui
 
