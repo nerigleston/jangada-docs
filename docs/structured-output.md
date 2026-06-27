@@ -20,6 +20,11 @@ print(comp.parsed.nome, comp.parsed.idade)   # João 30
 - `comp.text` → o JSON bruto retornado.
 - `comp.usage` / `comp.cost` → tokens e custo estimado.
 
+> ⚠️ `max_tokens` tem default de **1024**. Em listas grandes a resposta pode ser
+> cortada; nesse caso a jangada levanta `errors.TruncatedError` ("aumente
+> max_tokens") **antes** de validar — em vez de um erro confuso de JSON cortado do
+> Pydantic. A correção é subir `max_tokens` (ver [Parâmetros](parameters.md)).
+
 ## Async
 
 ```python

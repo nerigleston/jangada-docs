@@ -14,7 +14,13 @@ llm.complete("O que aparece aqui?", images=["foto.jpg"])
 # por bytes ou base64
 img = Image.from_bytes(upload_bytes, "image/png")   # ou Image.from_base64
 recibo = llm.parse("Extraia o total.", Recibo, images=[img]).parsed
+
+# rotular cada imagem: tuplas (rótulo, imagem) -> TextPart(rótulo) antes de cada uma
+llm.parse("Compare.", Comparacao, images=[("frente", img), ("verso", img2)])
 ```
+
+Para controle total da ordem (vários blocos texto/imagem, multi-turno), monte
+`history=[Message("user", [TextPart(...), ImagePart(...), ...])]` com `prompt=None`.
 
 ## Tradução por provider
 

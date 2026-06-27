@@ -36,9 +36,9 @@ print(price_for("gpt-4o-mini"))
   `response_format="verbose_json"` na transcrição **ou** informe a duração em
   `Audio.from_bytes(dados, mime, duration=...)`. Registre/ajuste com
   `register_audio_price("whisper-1", 0.006)` (USD por minuto).
-- **Detecção** (`detect_objects`/`adetect_objects`): retorna `Detection`, não
-  `Completion` — o custo da chamada interna **não** é exposto. Use um modelo
-  flash/lite; se precisar do custo, chame `llm.parse(...)` direto e leia `.cost`.
+- **Detecção**: `detect_objects`/`adetect_objects` devolvem só `list[Detection]`
+  (sem custo). Para o custo, use `detect_objects_full`/`adetect_objects_full`, que
+  devolvem um `DetectionResult` com `.detections` **e** `.completion`/`.cost`/`.usage`.
 
 ## Onde isso aparece
 

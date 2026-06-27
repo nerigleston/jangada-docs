@@ -839,6 +839,11 @@ print(comp.parsed.nome, comp.parsed.idade)   # João 30
 - `comp.text` → o JSON bruto retornado.
 - `comp.usage` / `comp.cost` → tokens e custo estimado.
 
+> ⚠️ `max_tokens` tem default de **1024**. Em listas grandes a resposta pode ser
+> cortada; nesse caso a jangada levanta `errors.TruncatedError` ("aumente
+> max_tokens") **antes** de validar — em vez de um erro confuso de JSON cortado do
+> Pydantic. A correção é subir `max_tokens` (ver [Parâmetros](parameters.md)).
+
 ## Async
 
 ```python
@@ -1132,7 +1137,13 @@ llm.complete("O que aparece aqui?", images=["foto.jpg"])
 # por bytes ou base64
 img = Image.from_bytes(upload_bytes, "image/png")   # ou Image.from_base64
 recibo = llm.parse("Extraia o total.", Recibo, images=[img]).parsed
+
+# rotular cada imagem: tuplas (rótulo, imagem) -> TextPart(rótulo) antes de cada uma
+llm.parse("Compare.", Comparacao, images=[("frente", img), ("verso", img2)])
 ```
+
+Para controle total da ordem (vários blocos texto/imagem, multi-turno), monte
+`history=[Message("user", [TextPart(...), ImagePart(...), ...])]` com `prompt=None`.
 
 ## Tradução por provider
 
@@ -1729,9 +1740,9 @@ print(price_for("gpt-4o-mini"))
   `response_format="verbose_json"` na transcrição **ou** informe a duração em
   `Audio.from_bytes(dados, mime, duration=...)`. Registre/ajuste com
   `register_audio_price("whisper-1", 0.006)` (USD por minuto).
-- **Detecção** (`detect_objects`/`adetect_objects`): retorna `Detection`, não
-  `Completion` — o custo da chamada interna **não** é exposto. Use um modelo
-  flash/lite; se precisar do custo, chame `llm.parse(...)` direto e leia `.cost`.
+- **Detecção**: `detect_objects`/`adetect_objects` devolvem só `list[Detection]`
+  (sem custo). Para o custo, use `detect_objects_full`/`adetect_objects_full`, que
+  devolvem um `DetectionResult` com `.detections` **e** `.completion`/`.cost`/`.usage`.
 
 ## Onde isso aparece
 
