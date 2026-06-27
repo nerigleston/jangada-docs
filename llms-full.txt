@@ -1115,9 +1115,54 @@ async with MCPClient(
 | Elicitation | `elicitation_callback=...` |
 | Logging | `logging_callback=...` / `set_logging_level(...)` |
 
+## Ser um servidor MCP (expor suas tools/Agent)
+
+Além de **consumir** MCP (acima), o jangada pode **ser** um servidor MCP — expor
+suas funções/`Agent` para clientes (Claude Desktop, Cursor, outro agente)
+chamarem. É construído sobre o `Server` **low-level** do SDK (o protocolo), não
+sobre o FastMCP — e reaproveita o `tools.py` (o schema sai da assinatura da função).
+
+```python
+from jangada_ai import serve_mcp
+
+def somar(a: float, b: float) -> float:
+    "Soma dois números."
+    return a + b
+
+serve_mcp("minha-calc", tools=[somar])          # transporte stdio (Claude Desktop/Cursor)
+```
+
+Expor um **Agent** inteiro (vira a tool `ask`):
+
+```python
+from jangada_ai import Agent, LLM, serve_mcp
+agente = Agent(LLM("openai", "gpt-4o-mini"), role="suporte", tools=[somar])
+serve_mcp("suporte", agent=agente)
+```
+
+### Por HTTP (streamable-http)
+
+```python
+serve_mcp("minha-calc", tools=[somar], transport="streamable-http", port=8000)
+```
+
+Ou monte o app ASGI no seu servidor (FastAPI/Starlette):
+
+```python
+from jangada_ai import build_mcp_app
+app = build_mcp_app("minha-calc", tools=[somar], path="/mcp")   # Starlette ASGI
+```
+
+Requer o extra `jangada-ai[mcp]`; para HTTP, também `starlette` + um servidor ASGI
+(`uvicorn`). O **stdio** é o transporte usado por Claude Desktop/Cursor.
+
+> `serve_mcp`/`build_mcp_app`/`build_mcp_server` = **lado servidor**. O `MCPClient`
+> (acima) é o **lado cliente**. São complementares.
+
 ## Exemplo
 
-[`examples/mcp_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/mcp_example.py) — script executável.
+- [`examples/mcp_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/mcp_example.py) — cliente MCP.
+- [`examples/mcp_server_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/mcp_server_example.py) — **servidor** MCP (stdio).
 
 ---
 
