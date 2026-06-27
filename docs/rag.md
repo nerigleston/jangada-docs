@@ -103,6 +103,36 @@ rag.search("backup incremental", k=5, mode="vector")   # só vetorial
 rag.search("backup incremental", k=5, mode="hybrid")   # vetorial + texto (RRF)
 ```
 
+## Reranking (maior salto de qualidade)
+
+O retriever traz candidatos (bom *recall*), mas a ordem nem sempre é a melhor.
+Um **reranker** — modelo treinado em "este trecho responde a esta pergunta?" —
+reordena os candidatos e fica com os melhores. Em RAG é o maior ganho de
+qualidade por esforço.
+
+Com `reranker=`, o `RAG` busca **mais** candidatos (`fetch_k`, padrão `k*4`) e
+reordena, devolvendo os `k` melhores:
+
+```python
+from jangada_ai.rag import RAG, Reranker, vector_store
+
+rag = RAG(emb, vector_store("memory"), chat=chat, reranker=Reranker.cohere())
+rag.ask("Como faço backup incremental?")   # busca k*4 e reordena para os k melhores
+```
+
+Construtores do `Reranker`:
+
+- `Reranker.cohere(model="rerank-v3.5")` — Cohere Rerank (precisa de `cohere` e
+  `COHERE_API_KEY`).
+- `Reranker.voyage(model="rerank-2")` — Voyage Rerank (precisa de `voyageai` e
+  `VOYAGE_API_KEY`).
+- `Reranker.fn(lambda query, docs: [scores])` — qualquer scorer (ex.: um
+  cross-encoder local ou um LLM seu).
+
+Extra opcional: `pip install "jangada-ai[rerank]"`. Controle fino:
+`RAG(..., reranker=..., fetch_k=40)`; por chamada, `rag.search(q, rerank=False)`
+desliga e `rerank=OutroReranker` sobrescreve.
+
 ## Parâmetros ajustáveis
 
 Definidos no `RAG(...)` (padrão) e/ou por chamada:
