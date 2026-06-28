@@ -1883,6 +1883,43 @@ print(price_for("gpt-4o-mini"))
 > ⚠️ Os valores são **aproximados** e servem para estimativa/observabilidade —
 > não trate como fonte de billing.
 
+## Preços sempre atualizados (sem atualizar a lib)
+
+A tabela embutida no `pricing.py` é só o **fallback offline**. Como preços de API
+mudam toda hora, a jangada publica um catálogo (`prices.json`) e o aplica **sozinha,
+sem você escrever nada** — e **sem precisar dar `pip install -U`**.
+
+**Automático (padrão).** Na primeira vez que um custo é calculado (logo abaixo de
+cada chamada de provider, em `compute_cost`), a lib dispara **em background** um
+refresh do catálogo, cacheado por **1 dia**. Você só usa o LLM normalmente:
+
+```python
+llm = jangada_ai.LLM(provider="openai", model="gpt-4o-mini")
+comp = llm.complete("...")
+print(comp.cost)   # já tende a usar os preços do dia (refresh roda em background)
+```
+
+- **Não bloqueia**: a busca roda numa thread daemon; o `import` nunca toca a rede e
+  a chamada não trava. As primeiras chamadas usam o embutido até o refresh terminar.
+- **No máximo 1x/dia**: cache em `~/.cache/jangada/prices.json` (e 1x por processo).
+- **Resiliente**: rede falhou? fica no cache/embutido — nunca levanta.
+- **Desligar**: env `JANGADA_NO_PRICE_REFRESH=1`.
+
+**Manual (`refresh_prices`).** Para controle explícito/síncrono — garantir preços
+frescos no boot, forçar agora, ou apontar outra URL:
+
+```python
+jangada_ai.refresh_prices()                          # síncrono, respeita o cache
+jangada_ai.refresh_prices(ttl=3600, force=True)      # revalida/ força agora
+jangada_ai.refresh_prices(url="https://meu-espelho/prices.json")
+```
+
+Default da URL: `https://jangada.dev.br/prices.json` (override por `url=` ou env
+`JANGADA_PRICES_URL`; não precisa de `.env`).
+
+O override manual (`register_price`) tem prioridade sobre tudo — use para fixar um
+número exato de um modelo específico.
+
 ## Custo multimodal
 
 - **Imagem (vision)**: não há preço separado — os providers já contam os tokens da
@@ -1905,6 +1942,8 @@ print(price_for("gpt-4o-mini"))
 ## Exemplo
 
 [`examples/retry_cost_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/retry_cost_example.py) — script executável.
+
+[`examples/pricing_refresh_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/pricing_refresh_example.py) — preços dinâmicos com `refresh_prices()`.
 
 ---
 
