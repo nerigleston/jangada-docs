@@ -1870,8 +1870,8 @@ longo da cadeia.
 
 ## Tabela de preços
 
-Os preços ficam em `pricing.py` (aproximados, por 1M de tokens). Você pode
-registrar/ajustar:
+Os preços vêm de um catálogo JSON (aproximados, por 1M de tokens). Você pode
+registrar/ajustar em runtime:
 
 ```python
 from jangada_ai import register_price, price_for
@@ -1885,9 +1885,10 @@ print(price_for("gpt-4o-mini"))
 
 ## Preços sempre atualizados (sem atualizar a lib)
 
-A tabela embutida no `pricing.py` é só o **fallback offline**. Como preços de API
-mudam toda hora, a jangada publica um catálogo (`prices.json`) e o aplica **sozinha,
-sem você escrever nada** — e **sem precisar dar `pip install -U`**.
+Os preços moram num **catálogo JSON** (não mais hardcoded). A cópia embutida no
+pacote (`prices.json`) é só o **fallback offline**; como preços de API mudam toda
+hora, a jangada publica o catálogo em `jangada.dev.br/prices.json` e o aplica
+**sozinha, sem você escrever nada** — e **sem precisar dar `pip install -U`**.
 
 **Automático (padrão).** Na primeira vez que um custo é calculado (logo abaixo de
 cada chamada de provider, em `compute_cost`), a lib dispara **em background** um
