@@ -28,6 +28,9 @@ instalado.
 - [Groq](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-groq.md): modelos, recursos e quirks do provider Groq.
 - [Gemini](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-gemini.md): modelos, recursos e quirks; thinking transparente (você passa só `thinking_budget`/`thinking_level` e a lib adapta à versão, empacotando no `thinking_config` nativo).
 - [Anthropic](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-anthropic.md): modelos, recursos e o que o Claude NÃO faz (áudio).
+- [Azure OpenAI](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-azure.md): provider `azure` — mesma API da OpenAI servida pela Azure; `model` = nome do deployment; env `AZURE_OPENAI_ENDPOINT`/`AZURE_OPENAI_API_KEY`.
+- [AWS Bedrock](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-bedrock.md): provider `bedrock` — Converse API via boto3 (Claude/Llama/Mistral/Nova), tools e structured (tool-forcing); credenciais AWS; async via to_thread.
+- [Vertex AI](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-vertex.md): provider `vertex` — Gemini no Google Cloud (ADC + project/location); herda tudo do provider `gemini`.
 - [Parâmetros e perfis](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/parameters.md): params canônicos (temperature, max_tokens, ...) e normalização por modelo (gpt-5, gemini-3.x); thinking do Gemini via `extra=`/`params=`.
 - [Structured output](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/structured-output.md): `parse()`/`aparse()` com Pydantic, uniforme entre providers; trunca por max_tokens levanta `TruncatedError`; JSON fora do schema levanta `OutputValidationError` e entra no failover (tenta o próximo modelo); `comp.parsed` é coagido do texto se o SDK devolver None.
 - [Tools (function calling)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/tools.md): `tools=[...]` (OpenAI/Groq), baixo nível, e ferramentas pré-prontas (`jangada_ai.prebuilt`, ex.: tavily_search).
@@ -51,6 +54,10 @@ instalado.
 - [Guardrails de escopo](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/guardrails.md): `ScopeGuard` mantém a LLM num domínio e barra falas (blocklist + judge LLM); recusa via `Completion`, input/output, sync/async.
 - [Debug](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/debug.md): trace passo a passo por agente.
 - [Estendendo (novo provider)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/extending.md): contrato `Provider`, atalho `_OpenAICompatible` e invariantes.
+- [Casos de uso](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/casos-de-uso.md): do problema ao código — extração estruturada de nota fiscal (vision), fallback por erro entre providers e RAG sobre seus documentos.
+- [Por que jangada (comparativo)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/por-que-jangada.md): comparativo honesto com LiteLLM, LangChain e instructor — quando usar cada um e onde a jangada brilha.
+- [Versionamento e estabilidade](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/semver.md): SemVer (0.x vs 1.0), o que é breaking e a política de deprecação (avisar 1 minor antes via DeprecationWarning).
+- [Estabilidade da API](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/estabilidade.md): API pública (`__all__`) classificada em Estável × Experimental.
 - [Melhores práticas](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/best-practices.md): recomendações de produção — provider/model, structured output, guardrails, RAG (reranker + semantic chunking + multi-query/parent-document/compress + indexação incremental), retry/fallback, custo, cache, orquestração, agentes, transcrição (vídeo/mp4), async/FastAPI e pontos de atenção (contratos da lib).
 
 ## Migração e exemplos
