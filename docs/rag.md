@@ -124,7 +124,7 @@ Construtores do `Reranker`:
 
 - `Reranker.cohere(model="rerank-v3.5")` — Cohere Rerank (precisa de `cohere` e
   `COHERE_API_KEY`).
-- `Reranker.voyage(model="rerank-2")` — Voyage Rerank (precisa de `voyageai` e
+- `Reranker.voyage(model="rerank-2.5")` — Voyage Rerank (precisa de `voyageai` e
   `VOYAGE_API_KEY`).
 - `Reranker.fn(lambda query, docs: [scores])` — qualquer scorer (ex.: um
   cross-encoder local ou um LLM seu).

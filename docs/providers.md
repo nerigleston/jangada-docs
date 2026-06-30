@@ -1,6 +1,6 @@
 # Providers e chaves de API
 
-A jangada suporta cinco providers, cada um isolado em um *adapter* que traduz
+A jangada suporta seis providers, cada um isolado em um *adapter* que traduz
 os tipos normalizados (`Message`/`Completion`) para o SDK nativo.
 
 | Provider    | `provider=`  | Variável de ambiente | Extra para instalar         |
@@ -9,6 +9,7 @@ os tipos normalizados (`Message`/`Completion`) para o SDK nativo.
 | OpenAI      | `openai`     | `OPENAI_API_KEY`     | `jangada-ai[openai]`        |
 | Groq        | `groq`       | `GROQ_API_KEY`       | `jangada-ai[groq]`          |
 | Gemini      | `gemini`     | `GEMINI_API_KEY`     | `jangada-ai[gemini]`        |
+| Mistral     | `mistral`    | `MISTRAL_API_KEY`    | `jangada-ai[mistral]`       |
 | OpenRouter  | `openrouter` | `OPENROUTER_API_KEY` | `jangada-ai[openai]`        |
 
 ## OpenRouter (gateway para centenas de modelos)
@@ -60,6 +61,7 @@ O `.env` é detectado de forma não-destrutiva na importação (desative com
 - **Groq**: `response_format={"type":"json_schema",...}` + `model_validate_json`
 - **Gemini**: `config.response_schema=Modelo` → `resp.parsed`
 - **Anthropic**: tool-forcing (`tool_choice` fixo) → valida `tool_use.input`
+- **Mistral**: helper nativo `chat.parse(response_format=Modelo)` → `.message.parsed`
 - **OpenRouter**: igual ao Groq (json_schema com fallback p/ JSON Object mode)
 
 Veja [Structured output](structured-output.md) para o uso uniforme.
