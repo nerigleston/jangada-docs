@@ -35,9 +35,15 @@ llm = LLM("gemini", "gemini-2.5-flash")
   `stop`→`stop_sequences`; `temperature`/`top_p`/`top_k`/`seed` passam direto.
   É o único provider com `top_k`.
 - **Perfil de modelo** (`profiles.py`): `gemini-3.x` descarta sampling
-  (`temperature`/`top_p`/`top_k`). Function calling multi-turn no 3.x exige
-  preservar as *thought signatures* (integridade do histórico). Veja
-  [Parâmetros e perfis](parameters.md).
+  (`temperature`/`top_p`/`top_k`). Veja [Parâmetros e perfis](parameters.md).
+- **Function calling multi-turno no 3.x — *thought signatures* (resolvido pela
+  lib)**: o Gemini 3.x anexa um `thought_signature` opaco a cada function call e
+  o exige de volta, inalterado, ao reenviar o histórico. A jangada preserva isso
+  automaticamente — o `thought_signature` viaja no campo opaco
+  `metadata: dict` de `ToolCall`/`ToolCallPart` (dados do provider que a lib só
+  guarda, não interpreta), e o adapter o reanexa na `Part` ao remontar o
+  histórico. Ou seja, `tools=`, `Agent` e `MCPClient` funcionam em multi-turno
+  sem você tocar em nada. `gemini-2.5` não usa esse campo. (corrigido em 1.3.1)
 - **Resposta** (`Completion`): `usage` vem de `usage_metadata`
   (`prompt_token_count`/`candidates_token_count`).
 

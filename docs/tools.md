@@ -46,9 +46,13 @@ o **nome** de uma ferramenta para forçá-la.
 
 ## Peças
 
-- `Completion.tool_calls`: lista de `ToolCall(id, name, args)`.
+- `Completion.tool_calls`: lista de `ToolCall(id, name, args)`. Cada call também
+  carrega um `metadata: dict` opaco — dados específicos do provider que a lib
+  apenas preserva (não interpreta) e propaga de volta no histórico. É o que
+  mantém, por exemplo, o `thought_signature` do Gemini 3.x vivo entre rodadas;
+  você normalmente não precisa tocar nele.
 - `comp.assistant_message()`: reconstrói a mensagem do assistant (texto + tool
-  calls) para o histórico.
+  calls, incluindo o `metadata` de cada call) para o histórico.
 - `call.result(saida)`: cria o `ToolResultPart` correspondente.
 - `Message.tool_results(*parts)`: empacota os resultados numa mensagem.
 
