@@ -1557,10 +1557,16 @@ emb = LLM("openai", "text-embedding-3-small")   # ou ("gemini", "gemini-embeddin
 emb.embed("uma frase")            # -> vetor (list[float])
 emb.embed(["a", "b"])             # -> lista de vetores
 emb.embed(textos, task="document")  # task: "document" ao indexar, "query" ao buscar
+emb.embed(textos, batch_size=50)    # Gemini: textos por requisição (1..100, padrão 100)
 ```
 
 `task` vira `task_type` no Gemini (`RETRIEVAL_DOCUMENT`/`RETRIEVAL_QUERY`); a
 OpenAI ignora. `dimensions` (OpenAI) / `output_dimensionality` (Gemini) vão via `**opts`.
+
+`batch_size` (1..100, padrão 100) controla quantos textos vão por requisição: a
+API do Gemini aceita no máximo 100 por `BatchEmbedContents`, então listas maiores
+são fatiadas nesse tamanho. Só o Gemini usa — OpenAI/Azure/OpenRouter não têm esse
+limite e ignoram o parâmetro. Valores fora de 1..100 levantam `ValueError`.
 
 | Provider | Embeddings? | Modelo típico |
 |----------|:-----------:|---------------|
