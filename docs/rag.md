@@ -34,9 +34,14 @@ limite e ignoram o parâmetro. Valores fora de 1..100 levantam `ValueError`.
 | Provider | Embeddings? | Modelo típico |
 |----------|:-----------:|---------------|
 | OpenAI   | ✅ | `text-embedding-3-small` / `-large` |
-| Gemini   | ✅ | `gemini-embedding-001` |
+| Gemini   | ✅ | `gemini-embedding-001` / `gemini-embedding-2` |
 | Anthropic| ❌ | — (use Voyage/Cohere por fora) |
 | Groq     | ❌ | — |
+
+Com a observabilidade automática ativada, cada `embed()`/`aembed()` registra
+latência, tokens, custo estimado e capability `embeddings`. Embeddings executados
+dentro de `observability_session(name="rag.documents.ingest")` entram no mesmo
+trace da ingestão.
 
 ## Pipeline completo (`RAG`)
 

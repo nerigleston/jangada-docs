@@ -21,6 +21,7 @@ import os
 from jangada_ai import LLM, observability_session
 
 llm = LLM("openai", "gpt-4o-mini")
+embedder = LLM("openai", "text-embedding-3-small")
 
 
 def main() -> None:
@@ -36,7 +37,12 @@ def main() -> None:
         rascunho = llm.complete("Escreva um parágrafo sobre o mar.")
         llm.complete("Revise e melhore:\n{{texto}}", texto=rascunho.text)
 
-    print("\n[traces enviados automaticamente — o 2º bloco agrupado num lote]")
+    # 3) Embeddings também geram observations: uma ingestão só de embeddings
+    # aparece no dashboard com latência, tokens, custo e capability "embeddings".
+    with observability_session(name="rag.documents.ingest"):
+        embedder.embed(["primeiro chunk", "segundo chunk"])
+
+    print("\n[traces enviados automaticamente — completion e embeddings]")
 
 
 if __name__ == "__main__":
