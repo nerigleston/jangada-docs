@@ -43,6 +43,11 @@ latência, tokens, custo estimado e capability `embeddings`. Embeddings executad
 dentro de `observability_session(name="rag.documents.ingest")` entram no mesmo
 trace da ingestão.
 
+Se o Gemini não devolver tokens na resposta de embedding, a Jangada usa
+`count_tokens()` com o mesmo lote. O custo combina essa contagem com o preço do
+catálogo `jangada.dev.br/prices.json`; uma aproximação local só é usada se a
+contagem do provider também falhar.
+
 ## Pipeline completo (`RAG`)
 
 ```python

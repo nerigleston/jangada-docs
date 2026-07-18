@@ -36,6 +36,14 @@ A observation registra latência, tokens de entrada, custo estimado, quantidade 
 dimensão dos vetores e a capability `embeddings`. O retorno de `embed()` não muda:
 continua sendo um vetor para `str` ou uma lista de vetores para uma lista de textos.
 
+No Gemini, a contagem segue esta ordem: `usage_metadata` da própria resposta;
+`count_tokens()` com o mesmo modelo e lote quando o usage estiver ausente; e,
+somente se ambos falharem, estimativa local de aproximadamente 4 caracteres por
+token. O preço nunca fica no adapter: `compute_cost()` resolve o modelo pelo
+catálogo atualizado de `jangada.dev.br/prices.json`. As observations indicam a
+origem em `usageSource` (`provider`, `count_tokens` ou `estimated`) e marcam
+`usageEstimated=true` apenas no último fallback.
+
 A flag precisa ser "truthy" (`1`/`true`/`yes`/`on`/`sim`) **e** o token presente;
 faltando qualquer um, o modo fica desligado e nada é enviado (custo zero). Falhas
 de rede nunca derrubam a aplicação — o envio é best-effort numa thread daemon.

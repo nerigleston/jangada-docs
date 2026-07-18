@@ -1580,6 +1580,11 @@ latência, tokens, custo estimado e capability `embeddings`. Embeddings executad
 dentro de `observability_session(name="rag.documents.ingest")` entram no mesmo
 trace da ingestão.
 
+Se o Gemini não devolver tokens na resposta de embedding, a Jangada usa
+`count_tokens()` com o mesmo lote. O custo combina essa contagem com o preço do
+catálogo `jangada.dev.br/prices.json`; uma aproximação local só é usada se a
+contagem do provider também falhar.
+
 ## Pipeline completo (`RAG`)
 
 ```python
@@ -2079,6 +2084,14 @@ with observability_session(name="rag.documents.ingest"):
 A observation registra latência, tokens de entrada, custo estimado, quantidade e
 dimensão dos vetores e a capability `embeddings`. O retorno de `embed()` não muda:
 continua sendo um vetor para `str` ou uma lista de vetores para uma lista de textos.
+
+No Gemini, a contagem segue esta ordem: `usage_metadata` da própria resposta;
+`count_tokens()` com o mesmo modelo e lote quando o usage estiver ausente; e,
+somente se ambos falharem, estimativa local de aproximadamente 4 caracteres por
+token. O preço nunca fica no adapter: `compute_cost()` resolve o modelo pelo
+catálogo atualizado de `jangada.dev.br/prices.json`. As observations indicam a
+origem em `usageSource` (`provider`, `count_tokens` ou `estimated`) e marcam
+`usageEstimated=true` apenas no último fallback.
 
 A flag precisa ser "truthy" (`1`/`true`/`yes`/`on`/`sim`) **e** o token presente;
 faltando qualquer um, o modo fica desligado e nada é enviado (custo zero). Falhas
