@@ -196,12 +196,22 @@ Combinam entre si e com o `reranker=`.
 
 `sync_document`/`sync_texts` reindexam **só o que mudou** (dedup por hash do
 conteúdo): embeda os chunks novos e remove os que sumiram. Requer `document_id`
-e um store com suporte (memória hoje; pgvector/Mongo: usar `add_*`).
+e um store com suporte: memória ou PostgreSQL/pgvector. MongoDB ainda não oferece
+as primitivas incrementais.
 
 ```python
-rag.sync_document("manual.pdf", name="manual")
+rag.sync_document("manual.pdf", name="manual.pdf", document_id="manual")
 # {'added': 3, 'removed': 1, 'unchanged': 42}  -> só os 3 novos foram embedados
 ```
+
+No pgvector, a primeira sincronização migra a tabela de forma idempotente:
+adiciona/backfill a coluna `hash`, remove duplicatas exatas por
+`(document_id, hash)` e cria um índice único parcial. Linhas antigas sem
+`document_id` são preservadas. Cada atualização roda numa transação protegida por
+advisory lock do `document_id`, portanto sincronizações concorrentes não misturam
+versões. Mudanças apenas de metadata/posição são persistidas sem reembedding; se
+extração, chunking, embedding ou gravação falhar, a versão anterior continua
+disponível.
 
 ## Qual recurso usar? (resumo)
 

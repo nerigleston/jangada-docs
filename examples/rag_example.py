@@ -15,8 +15,11 @@ chat = LLM("openai", "gpt-4o-mini")
 store = vector_store(os.environ.get("DATABASE_URL_VECTOR", "memory"))
 rag = RAG(emb, store, chat=chat)
 
-# 1) indexar (extrai texto -> chunk -> embedding "document" -> grava)
-rag.add_document("manual.pdf", metadata={"fonte": "manual"})
+# 1) sincronizar com ID estável (reenvio idêntico gera zero embeddings novos)
+rag.sync_document(
+    "manual.pdf", name="manual.pdf", document_id="manual",
+    metadata={"fonte": "manual"},
+)
 rag.add_texts(["A jangada troca de provider sem mudar o código."], metadatas=[{"fonte": "nota"}])
 
 # 2) perguntar com busca híbrida (vetorial + texto, fundidos por RRF)
