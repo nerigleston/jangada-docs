@@ -39,9 +39,10 @@ limite e ignoram o parâmetro. Valores fora de 1..100 levantam `ValueError`.
 | Groq     | ❌ | — |
 
 Com a observabilidade automática ativada, cada `embed()`/`aembed()` registra
-latência, tokens, custo estimado e capability `embeddings`. Embeddings executados
-dentro de `observability_session(name="rag.documents.ingest")` entram no mesmo
-trace da ingestão.
+latência, tokens, custo estimado, capability `embeddings` e o array completo dos
+vetores em `output`. Embeddings executados dentro de
+`observability_session(name="rag.documents.ingest")` entram no mesmo trace da
+ingestão.
 
 Se o Gemini não devolver tokens na resposta de embedding, a Jangada usa
 `count_tokens()` com o mesmo lote. O custo combina essa contagem com o preço do

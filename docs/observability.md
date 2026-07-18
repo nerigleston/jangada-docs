@@ -32,9 +32,11 @@ with observability_session(name="rag.documents.ingest"):
     vectors = embedder.embed(["primeiro chunk", "segundo chunk"])
 ```
 
-A observation registra latência, tokens de entrada, custo estimado, quantidade e
-dimensão dos vetores e a capability `embeddings`. O retorno de `embed()` não muda:
-continua sendo um vetor para `str` ou uma lista de vetores para uma lista de textos.
+A observation registra latência, tokens de entrada, custo estimado, a capability
+`embeddings` e o array completo de vetores em `output`. O output observado mantém
+sempre o formato de lote (`[[...], [...]]`), inclusive quando `embed()` recebe uma
+única string. O retorno público não muda: continua sendo um vetor para `str` ou uma
+lista de vetores para uma lista de textos.
 
 No Gemini, a contagem segue esta ordem: `usage_metadata` da própria resposta;
 `count_tokens()` com o mesmo modelo e lote quando o usage estiver ausente; e,
