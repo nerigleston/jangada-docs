@@ -27,7 +27,7 @@ print(comp.parsed.nome, comp.parsed.idade)   # João 30
 > `with_fallback` (não repete o mesmo — daria o mesmo JSON). Assim o fallback
 > cobre tanto erro de API quanto resposta malformada.
 
-> ⚠️ `max_tokens` tem default de **1024**. Em listas grandes a resposta pode ser
+> `max_tokens` tem default de **8192**. Em listas especialmente grandes a resposta pode ser
 > cortada; nesse caso a jangada levanta `errors.TruncatedError` ("aumente
 > max_tokens") **antes** de validar — em vez de um erro confuso de JSON cortado do
 > Pydantic. A correção é subir `max_tokens` (ver [Parâmetros](parameters.md)).

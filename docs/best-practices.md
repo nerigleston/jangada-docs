@@ -16,7 +16,8 @@ item aponta para o guia detalhado da capacidade correspondente.
   ajustar `temperature`/`max_tokens`: a camada de perfis já adapta o payload por
   modelo (ver [Parâmetros](parameters.md)).
 
-> **Nota:** sempre defina `max_tokens` explicitamente em extrações longas.
+> **Nota:** o padrão global é `max_tokens=8192`; defina-o explicitamente quando
+> o modelo ou a extração exigir um limite diferente.
 > Modelos com *thinking* (ex.: Gemini 2.5) podem consumir o orçamento de saída e
 > truncar o JSON — um `max_tokens` folgado evita respostas cortadas.
 

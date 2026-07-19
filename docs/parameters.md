@@ -14,11 +14,14 @@ o nome nativo do SDK, descartando os não suportados.
 | `stop`        | `stop`                 | `stop_sequences` | `stop_sequences`      |
 | `seed`        | `seed`                 | *(descartado)*   | `seed`                |
 
+Por padrão, `LLM` usa `max_tokens=8192` em todos os providers. Esse valor pode
+ser alterado no construtor ou sobrescrito em uma chamada específica:
+
 ```python
-llm = LLM("anthropic", "claude-opus-4-8", temperature=0.2, max_tokens=512)
+llm = LLM("anthropic", "claude-opus-4-8")  # max_tokens=8192
 
 # override por chamada
-llm.complete("...", params={"temperature": 0.9})
+llm.complete("...", params={"temperature": 0.9, "max_tokens": 16384})
 
 # clone com novos defaults
 criativo = llm.with_params(temperature=1.0)

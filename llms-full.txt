@@ -748,7 +748,7 @@ llm = LLM("anthropic", "claude-opus-4-8")
 - **Parâmetros**: `temperature`, `max_tokens`, `top_p`, `top_k`, `stop`
   (→ `stop_sequences`). **Não** tem `seed` (é descartado).
 - **`max_tokens` é obrigatório** na API do Claude — a jangada já usa um default
-  (`1024`) quando você não informa.
+  alto (`8192`) quando você não informa.
 - **System**: vai no campo `system` da requisição (não como mensagem).
 - **Resposta** (`Completion`): `usage` de `input_tokens`/`output_tokens` nativos;
   `raw` com o objeto da SDK.
@@ -776,11 +776,14 @@ o nome nativo do SDK, descartando os não suportados.
 | `stop`        | `stop`                 | `stop_sequences` | `stop_sequences`      |
 | `seed`        | `seed`                 | *(descartado)*   | `seed`                |
 
+Por padrão, `LLM` usa `max_tokens=8192` em todos os providers. Esse valor pode
+ser alterado no construtor ou sobrescrito em uma chamada específica:
+
 ```python
-llm = LLM("anthropic", "claude-opus-4-8", temperature=0.2, max_tokens=512)
+llm = LLM("anthropic", "claude-opus-4-8")  # max_tokens=8192
 
 # override por chamada
-llm.complete("...", params={"temperature": 0.9})
+llm.complete("...", params={"temperature": 0.9, "max_tokens": 16384})
 
 # clone com novos defaults
 criativo = llm.with_params(temperature=1.0)
@@ -857,7 +860,7 @@ print(comp.parsed.nome, comp.parsed.idade)   # João 30
 > `with_fallback` (não repete o mesmo — daria o mesmo JSON). Assim o fallback
 > cobre tanto erro de API quanto resposta malformada.
 
-> ⚠️ `max_tokens` tem default de **1024**. Em listas grandes a resposta pode ser
+> `max_tokens` tem default de **8192**. Em listas especialmente grandes a resposta pode ser
 > cortada; nesse caso a jangada levanta `errors.TruncatedError` ("aumente
 > max_tokens") **antes** de validar — em vez de um erro confuso de JSON cortado do
 > Pydantic. A correção é subir `max_tokens` (ver [Parâmetros](parameters.md)).
@@ -2734,7 +2737,8 @@ item aponta para o guia detalhado da capacidade correspondente.
   ajustar `temperature`/`max_tokens`: a camada de perfis já adapta o payload por
   modelo (ver [Parâmetros](parameters.md)).
 
-> **Nota:** sempre defina `max_tokens` explicitamente em extrações longas.
+> **Nota:** o padrão global é `max_tokens=8192`; defina-o explicitamente quando
+> o modelo ou a extração exigir um limite diferente.
 > Modelos com *thinking* (ex.: Gemini 2.5) podem consumir o orçamento de saída e
 > truncar o JSON — um `max_tokens` folgado evita respostas cortadas.
 
