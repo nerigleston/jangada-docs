@@ -2113,6 +2113,29 @@ A flag precisa ser "truthy" (`1`/`true`/`yes`/`on`/`sim`) **e** o token presente
 faltando qualquer um, o modo fica desligado e nada é enviado (custo zero). Falhas
 de rede nunca derrubam a aplicação — o envio é best-effort numa thread daemon.
 
+## Encerramento (não perca o último trace)
+
+Como o envio roda numa thread daemon, um **script que termina logo após a última
+chamada** correria o risco de perder esse último trace: o interpretador mata as
+threads daemon ao sair e o POST morreria no meio. Para evitar isso, a jangada
+registra automaticamente um handler de `atexit` que **espera os envios pendentes**
+terminarem antes de encerrar (com um prazo total de segurança — não trava o
+processo se a rede estiver lenta). Você não precisa fazer nada.
+
+A única exceção é o encerramento **abrupto** (`os._exit()`, `signal` que não passa
+pelo `atexit`, ou um `sys.exit()` dentro de contexto que ignora handlers): aí,
+chame o flush manualmente antes de sair.
+
+```python
+from jangada_ai import LLM, flush_observability
+
+llm = LLM("openai", "gpt-4o-mini")
+resp = llm.complete("última pergunta")
+
+flush_observability()   # garante que o trace acima foi enviado
+# ... encerramento abrupto ...
+```
+
 ## Agrupar por lote
 
 Por padrão cada chamada vira um trace próprio. Para agrupar várias chamadas de
@@ -2303,6 +2326,31 @@ res = g.run(...)        # GraphResult agrega usage/cost
 Veja os exemplos executáveis em
 [`examples/graph_example.py`](https://github.com/nerigleston/jangada-docs/blob/main/examples/graph_example.py).
 
+### Fan-out robusto e observável (`parallel`)
+
+`parallel` aceita opções para produção:
+
+```python
+g.parallel(
+    "analises", branches, join="sintese",
+    on_error="skip",        # um ramo que falha não derruba o run (default: "raise")
+    max_concurrency=4,      # teto de ramos simultâneos (evita rate limit)
+    summarize=True,         # cada ramo resume a própria saída antes do join
+)
+```
+
+- **`on_error="skip"`**: o ramo que falhar fica ausente do join (string vazia no
+  contexto) e vai para `GraphResult.failures` (`{ramo: erro}`). O fan-out entrega o
+  parcial em vez de perder o trabalho já pago dos outros ramos. Com `"raise"`
+  (padrão) a primeira exceção derruba o run.
+- **`max_concurrency=N`**: semáforo — no máximo N ramos rodam ao mesmo tempo.
+- **`summarize`**: `True` (instrução padrão) ou uma instrução `str`. Corta o input
+  do join (que lê todos os ramos e cresce O(N)); a chamada de resumo entra no
+  `usage`/`cost`.
+
+`GraphResult` também expõe **`durations`** (`{nó/ramo: segundos}`) — dá para medir
+`max(ramos)` vs `t_join` diretamente, o diagnóstico que importa num fan-out.
+
 ## Custo agregado
 
 `FlowResult` e `GraphResult` somam `usage` e `cost` de todas as etapas — útil
@@ -2480,7 +2528,8 @@ agente = Agent(llm, role="Suporte", memory=RAGMemory(rag, k=3))
 
 ### Sequencial (handoff)
 
-Cada agente roda em ordem e recebe a saída do anterior como contexto:
+Cada agente roda em ordem e recebe, por padrão, **apenas a saída do agente
+anterior** como contexto (não o transcript acumulado):
 
 ```python
 from jangada_ai import LLM, Agent, Squad
@@ -2494,6 +2543,21 @@ res = squad.run("Escreva um parágrafo sobre jangadas nordestinas.")
 print(res.text)            # saída do último agente
 print(res.outputs)         # {"Pesquisador": "...", "Escritor": "..."}
 ```
+
+**Semântica do contexto** (`context=`):
+
+- **`"last"`** (padrão): cada agente recebe só a saída imediatamente anterior. O
+  input por salto é ~constante — o custo da cadeia cresce **O(N)**, não O(N²).
+- **`"full"`**: cada agente recebe o **transcript acumulado** (todas as saídas
+  anteriores, rotuladas por papel). Mais contexto, custo **O(N²)** em cadeias longas.
+
+```python
+Squad([pesquisador, escritor], context="full")   # transcript inteiro a cada salto
+```
+
+**Observabilidade por agente**: `res.steps` traz uma entrada por agente com
+`(role, usage, cost, cost_complete, dt)` — dá para ver o input/custo/latência
+crescer (ou não) a cada salto sem desmontar o `Squad` na mão.
 
 ### Hierárquico (delegação)
 
