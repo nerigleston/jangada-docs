@@ -22,7 +22,7 @@ instalado.
 ## Documentação
 
 - [Começando](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/getting-started.md): instalação, primeira chamada e como trocar de provider.
-- [Providers e chaves](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/providers.md): os quatro providers, variáveis de ambiente e precedência de chave.
+- [Providers e chaves](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/providers.md): os sete providers, variáveis de ambiente e precedência de chave.
 - [Matriz de capacidades](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/capabilities.md): o que cada provider suporta (vision, áudio, structured, params).
 - [OpenAI](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-openai.md): modelos, recursos e quirks do provider OpenAI.
 - [Groq](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-groq.md): modelos, recursos e quirks do provider Groq.
@@ -32,6 +32,7 @@ instalado.
 - [AWS Bedrock](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-bedrock.md): provider `bedrock` — Converse API via boto3 (Claude/Llama/Mistral/Nova), tools e structured (tool-forcing); credenciais AWS; async via to_thread.
 - [Vertex AI](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-vertex.md): provider `vertex` — Gemini no Google Cloud (ADC + project/location); herda tudo do provider `gemini`.
 - [Mistral](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-mistral.md): provider `mistral` — SDK oficial `mistralai`; texto, vision, streaming, structured (helper nativo `chat.parse`), tools, embeddings (`mistral-embed`), OCR/Document AI (`ocr()` com `mistral-ocr-latest`) e transcrição Voxtral; env `MISTRAL_API_KEY`.
+- [DeepSeek](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-deepseek.md): provider `deepseek` — base_url próprio sobre o SDK `openai` (mesma receita do OpenRouter); modelos `deepseek-v4-flash`/`-pro`/`-flash-vision-exp`; modo `thinking` via `extra=` (empacotado em `extra_body`); sem JSON Schema estrito (vai direto pro JSON Object mode), sem MCP server-side, sem transcrição; env `DEEPSEEK_API_KEY`.
 - [Parâmetros e perfis](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/parameters.md): params canônicos (temperature, max_tokens, ...) e normalização por modelo (gpt-5, gemini-3.x); thinking do Gemini via `extra=`/`params=`.
 - [Structured output](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/structured-output.md): `parse()`/`aparse()` com Pydantic, uniforme entre providers; trunca por max_tokens levanta `TruncatedError`; JSON fora do schema levanta `OutputValidationError` e entra no failover (tenta o próximo modelo); `comp.parsed` é coagido do texto se o SDK devolver None.
 - [Tools (function calling)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/tools.md): `tools=[...]` (OpenAI/Groq), baixo nível, e ferramentas pré-prontas (`jangada_ai.prebuilt`, ex.: tavily_search).
