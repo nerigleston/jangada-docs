@@ -88,6 +88,32 @@ llm.complete("Qual a cotação do dólar hoje?", tools=[tavily_search])
 > Parâmetros **keyword-only** (após `*`, como `api_key`/`timeout`) são config de
 > runtime e **não** aparecem no schema que o modelo vê.
 
+### Conectores Brasil (`jangada_ai.prebuilt.br`)
+
+Serviços brasileiros muito usados, **sem dependência e sem chave**:
+
+```python
+from jangada_ai.prebuilt import consultar_cep, validar_cpf
+
+llm.complete("O CEP 01310-100 é de qual cidade?", tools=[consultar_cep])
+```
+
+| Tool | O que faz |
+|------|-----------|
+| `validar_cpf` / `validar_cnpj` / `validar_documento` | valida dígitos verificadores (texto pro modelo); `validar_documento` detecta o tipo pelo nº de dígitos |
+| `cpf_valido` / `cnpj_valido` | mesma validação, mas devolve `bool` (uso de biblioteca, não como tool) |
+| `formatar_cpf` / `formatar_cnpj` | formata dígitos como `000.000.000-00` / `00.000.000/0000-00` |
+| `consultar_cep` | endereço + coordenadas de um CEP ([BrasilAPI](https://brasilapi.com.br)) |
+| `consultar_cnpj` | cadastro na Receita (razão social, situação, CNAE, endereço, sócios) — diferente de `validar_cnpj`, que só confere os dígitos |
+| `consultar_banco` | banco por código de compensação ou por nome |
+| `feriados_nacionais` | feriados nacionais de um ano |
+| `consultar_ddd` | UF e cidades atendidas por um DDD |
+| `taxas_juros` | SELIC/CDI/IPCA e demais índices oficiais |
+
+As consultas de rede (`consultar_*`, `feriados_nacionais`, `taxas_juros`) usam a
+[BrasilAPI](https://brasilapi.com.br) (pública, sem autenticação); a validação de
+CPF/CNPJ é local (algoritmo puro, sem rede).
+
 As tools que chamam API externa tratam **todos os casos de resposta**: rate
 limit (429, respeitando `Retry-After`), auth (401/403), 404, 5xx, timeout/
 conexão e corpo não-JSON. Erros transitórios (429/5xx/timeout) têm **retry leve
