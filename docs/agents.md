@@ -36,6 +36,11 @@ print(res.cost, res.usage, res.iterations)
   resultado de erro orientando a usar `arun`.
 - Para um servidor **MCP**, passe `mcp_client=MCPClient(...)` e use **`arun`**
   (async): o agente lista as tools do servidor e as usa junto das suas.
+- **`AgentResult.stopped_by_limit`**: `True` quando o loop parou por bater em
+  `max_iterations` com `tool_calls` ainda pendentes — nesse caso `text`/
+  `messages` NÃO são a resposta final do modelo, são o último passo do loop
+  (um `UserWarning` também é emitido). `False` quando o modelo parou de pedir
+  tool por conta própria.
 
 ```python
 async with MCPClient("https://seu-mcp/mcp/") as mcp:

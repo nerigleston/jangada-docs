@@ -87,6 +87,21 @@ modelo é executado com `await mcp.call_tool(...)` e reenviado via
 `Message.tool_results(...)` — o mesmo [tool calling](tools.md) de sempre, no
 automático. Quer controle total? Use `MCPClient` + `tools=` na mão.
 
+- **`isError` do resultado da tool** vira `is_error=True` no `tool_result` —
+  o modelo sabe que a tool falhou (diferente de uma exceção de rede/protocolo,
+  que já virava erro antes).
+- **`list_tools`/`list_resources`/`list_prompts`** seguem o `nextCursor`
+  sozinhos até esgotar as páginas — servidores com muitas tools não ficam
+  incompletos.
+- **Limite de iterações**: se `run_agent` bater em `max_iterations` com
+  `tool_calls` ainda pendentes, ele emite um `UserWarning` (`Completion`
+  devolvido não é necessariamente a resposta final). No `Agent.run`/`arun`
+  (abaixo), o mesmo caso também marca `AgentResult.stopped_by_limit = True`.
+- **Erro de conexão** (`MCPClient.__aenter__`, ex.: token inválido, servidor
+  fora do ar) vira um `APIConnectionError` da própria lib com a causa real
+  (ex.: `HTTP 403`), em vez do erro cru do transporte (`ExceptionGroup`/
+  `CancelledError` do `anyio`).
+
 ## Primitivos completos do MCP (no `MCPClient`)
 
 Além de **tools**, o `MCPClient` cobre o resto do protocolo:
