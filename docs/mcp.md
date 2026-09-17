@@ -38,7 +38,28 @@ print(comp.text)   # o provider já executou as tools do MCP
 
 ## Client-side (Gemini, async)
 
-A sessão MCP é assíncrona, então use **`acomplete`**:
+No Gemini, `MCPServer(url=...)` também funciona — mas só em **`acomplete`**: a
+jangada abre um `MCPClient` próprio por baixo e entrega ao SDK como sessão
+client-side (é o único jeito que o Gemini suporta). Precisa do extra `[mcp]`.
+
+```python
+from jangada_ai import LLM, MCPServer
+
+llm = LLM("gemini", "gemini-2.5-flash")
+comp = await llm.acomplete(
+    "Liste as issues abertas.",
+    mcp_servers=[MCPServer(url="https://mcp.exemplo.com/mcp/", name="github",
+                           authorization_token="TOKEN")],
+)
+```
+
+> No `complete()` (sync) isso continua levantando `UnsupportedError` — o Gemini
+> não tem como abrir uma sessão assíncrona fora de `acomplete`. `allowed_tools`
+> do `MCPServer` ainda **não** é respeitado nesse caminho (o SDK do Gemini lista
+> as tools sozinho, sem hook de filtro) — para restringir tools no Gemini, use
+> o `MCPClient`/`run_agent` próprio da jangada (abaixo), que tem `allowed_tools=`.
+
+A sessão MCP é assíncrona (montada manualmente), então use **`acomplete`**:
 
 ```python
 from mcp import ClientSession
@@ -99,8 +120,49 @@ automático. Quer controle total? Use `MCPClient` + `tools=` na mão.
   (abaixo), o mesmo caso também marca `AgentResult.stopped_by_limit = True`.
 - **Erro de conexão** (`MCPClient.__aenter__`, ex.: token inválido, servidor
   fora do ar) vira um `APIConnectionError` da própria lib com a causa real
-  (ex.: `HTTP 403`), em vez do erro cru do transporte (`ExceptionGroup`/
-  `CancelledError` do `anyio`).
+  (ex.: `HTTP 403`/`HTTP 400`), em vez do erro cru do transporte
+  (`ExceptionGroup`/`CancelledError` do `anyio`) — mesmo quando a causa real só
+  aparece ao FECHAR a conexão (não na abertura), caso real de servidor que
+  recusa a conexão HTTP.
+
+### Transporte, autenticação e timeout
+
+```python
+async with MCPClient(
+    "https://meu-mcp/sse",     # URL terminando em /sse -> detecta SSE sozinho
+    # transport="sse",         # ou force explicitamente ("sse" | "streamable-http")
+    auth_token="TOKEN",        # vira header Authorization: Bearer TOKEN
+    timeout=30,                # segundos, repassado ao transporte HTTP
+) as mcp:
+    ...
+```
+
+### Conexão de vida longa (`connect`/`aclose`/`reconnect`, `keep_alive`, `ping`)
+
+Fora do `async with` — útil para abrir no startup da aplicação e fechar no
+shutdown:
+
+```python
+mcp = MCPClient("https://meu-mcp/mcp/", auth_token="TOKEN")
+await mcp.connect()          # idempotente: chamar de novo já conectado é no-op
+...
+await mcp.ping()             # health check (session/ping)
+...
+await mcp.reconnect()        # fecha e reabre (ex.: percebeu a conexão caída)
+...
+await mcp.aclose()           # no shutdown
+```
+
+Com `keep_alive=True`, o `MCPClient` conecta **sozinho** na 1ª chamada (sem
+precisar de `connect()`/`async with`) e reconecta **uma vez**, sozinho, se uma
+chamada falhar com algo que parece conexão caída — não repete em erro de
+LÓGICA da tool (ex.: argumento inválido), o que dobraria um efeito colateral
+de verdade:
+
+```python
+mcp = MCPClient("https://meu-mcp/mcp/", auth_token="TOKEN", keep_alive=True)
+tools = await mcp.list_tools()   # conecta sozinho aqui
+```
 
 ## Primitivos completos do MCP (no `MCPClient`)
 
@@ -148,6 +210,48 @@ async with MCPClient(
 | Sampling | `sampling_llm=LLM(...)` |
 | Elicitation | `elicitation_callback=...` |
 | Logging | `logging_callback=...` / `set_logging_level(...)` |
+
+## `run_agent`: histórico, callbacks, allowlist e retorno enriquecido
+
+```python
+from jangada_ai.message import Message
+
+def veta_apagar(call):
+    return call.name != "apagar_arquivo"   # False = veta a chamada
+
+async with MCPClient("https://meu-mcp/mcp/") as mcp:
+    ans = await run_agent(
+        llm, "Liste e depois apague os temporários", client=mcp,
+        history=[Message("user", "oi"), Message("assistant", "olá!")],  # turnos anteriores
+        allowed_tools=["listar_arquivos", "apagar_arquivo"],  # restringe as tools visíveis
+        on_tool_call=veta_apagar,        # (sync ou async) False = veta a chamada
+        on_tool_result=lambda c, r: print(c.name, r.is_error),
+    )
+    print(ans.text, ans.iterations, ans.stopped_by_limit)
+    print(ans.tool_trace)          # [{"call", "result", "is_error"}, ...] de TODAS as rodadas
+    print(ans.usage_total, ans.cost_total, ans.cost_complete)   # agregados do loop inteiro
+```
+
+- `history=` injeta turnos anteriores antes da tarefa; `prompt=None` continua
+  só do histórico (sem adicionar mensagem de usuário vazia).
+- `allowed_tools=` filtra pelo nome antes do modelo ver as tools (também
+  disponível em `mcp_tools(client, allowed_tools=[...])` direto).
+- `on_tool_call(call)`/`on_tool_result(call, result)` (sync ou async) correm a
+  cada tool call; `on_tool_call` devolvendo `False` **veta** a chamada (o
+  modelo recebe um `tool_result` de erro, sem a tool executar).
+- O `Completion` devolvido ganha atributos extras — compatível com sempre,
+  `usage`/`cost` continuam sendo só os da ÚLTIMA chamada ao LLM:
+
+| Atributo extra | O quê |
+|---|---|
+| `tool_trace` | lista de `{"call", "result", "is_error"}` de TODAS as tool calls do loop |
+| `iterations` | quantas rodadas o loop deu |
+| `stopped_by_limit` | `True` se parou por bater em `max_iterations` (mesmo caso do `UserWarning`) |
+| `usage_total`/`cost_total`/`cost_complete` | agregados de TODAS as chamadas ao LLM no loop |
+
+Em `Agent`/`Squad` (ver [Agentes e times](agents.md)), o mesmo aparece como
+`mcp_allowed_tools=`, `on_tool_call=`/`on_tool_result=` no construtor, e
+`AgentResult.tool_trace`.
 
 ## Ser um servidor MCP (expor suas tools/Agent)
 

@@ -36,11 +36,27 @@ print(res.cost, res.usage, res.iterations)
   resultado de erro orientando a usar `arun`.
 - Para um servidor **MCP**, passe `mcp_client=MCPClient(...)` e use **`arun`**
   (async): o agente lista as tools do servidor e as usa junto das suas.
+  `mcp_allowed_tools=[...]` restringe quais tools do MCP ficam visíveis.
 - **`AgentResult.stopped_by_limit`**: `True` quando o loop parou por bater em
   `max_iterations` com `tool_calls` ainda pendentes — nesse caso `text`/
   `messages` NÃO são a resposta final do modelo, são o último passo do loop
   (um `UserWarning` também é emitido). `False` quando o modelo parou de pedir
   tool por conta própria.
+- **`on_tool_call`/`on_tool_result`**: callbacks (sync no `run`; sync ou async
+  no `arun`) que correm a cada tool call (function ou MCP). `on_tool_call`
+  devolvendo `False` **veta** a chamada (o modelo recebe um `tool_result` de
+  erro, sem a tool executar). `AgentResult.tool_trace` traz `{"call",
+  "result", "is_error"}` de todas as chamadas do turno.
+
+```python
+def confirma(call):
+    return call.name != "apagar_tudo"   # veta essa tool específica
+
+agente = Agent(llm, role="Operador", tools=[apagar_tudo, listar],
+               on_tool_call=confirma, on_tool_result=lambda c, r: print(c.name, r.is_error))
+res = agente.run("Liste e apague tudo")
+print(res.tool_trace)   # [{"call": ToolCall(...), "result": "...", "is_error": True/False}, ...]
+```
 
 ```python
 async with MCPClient("https://seu-mcp/mcp/") as mcp:

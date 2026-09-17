@@ -23,7 +23,27 @@ async def agente_mcp():
     g = LLM("openai", "gpt-4o-mini")   # ou anthropic/groq/gemini
     async with MCPClient("https://meu-mcp/mcp/") as mcp:        # ou command=/args= (stdio)
         ans = await run_agent(g, "Role uns dados", client=mcp)
-        print(ans.text)
+        print(ans.text, ans.iterations, ans.tool_trace)
+
+
+def veta_tools_perigosas(call):
+    return call.name != "apagar_arquivo"   # False = veta a chamada
+
+
+async def agente_mcp_com_controle():
+    """allowed_tools restringe o que o modelo vê; on_tool_call/on_tool_result
+    auditam/vetam cada chamada; keep_alive reconecta sozinho se cair."""
+    g = LLM("openai", "gpt-4o-mini")
+    mcp = MCPClient("https://meu-mcp/mcp/", auth_token="TOKEN", keep_alive=True)
+    ans = await run_agent(
+        g, "Liste e depois apague os temporários", client=mcp,
+        allowed_tools=["listar_arquivos", "apagar_arquivo"],
+        on_tool_call=veta_tools_perigosas,
+        on_tool_result=lambda c, r: print(c.name, "->", r.is_error),
+    )
+    print(ans.text)
+    await mcp.aclose()
 
 
 # asyncio.run(agente_mcp())
+# asyncio.run(agente_mcp_com_controle())
