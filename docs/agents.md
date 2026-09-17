@@ -40,6 +40,9 @@ print(res.cost, res.usage, res.iterations)
   `mcp_tools_cache=[...]` pula o `list_tools()` (e o round-trip) toda vez que
   `arun`/`astream` roda — liste uma vez com `await mcp_tools(mcp_client)` e
   passe aqui; sem isso, cada chamada relista as tools do zero.
+  `mcp_allowed_tools` continua sendo aplicado por cima de `mcp_tools_cache`
+  (filtra a lista já pronta), então dá pra listar sem filtro e restringir
+  por instância de `Agent`.
 - **`AgentResult.stopped_by_limit`**: `True` quando o loop parou por bater em
   `max_iterations` com `tool_calls` ainda pendentes — nesse caso `text`/
   `messages` NÃO são a resposta final do modelo, são o último passo do loop

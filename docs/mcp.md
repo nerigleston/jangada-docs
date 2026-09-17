@@ -173,7 +173,10 @@ tools = await mcp.list_tools()   # conecta sozinho aqui
 > Seguro para uso concorrente: se várias chamadas percebem a conexão caída ao
 > mesmo tempo (ex.: um servidor concorrente atendendo requests em paralelo),
 > só a primeira reconecta de verdade — as outras esperam e reaproveitam a
-> sessão nova, em vez de disparar reconexões por cima umas das outras.
+> sessão nova, em vez de disparar reconexões por cima umas das outras. Se a
+> reconexão em si falhar (servidor fora do ar), as chamadas que esperavam
+> reusam o MESMO erro por um cooldown curto, em vez de cada uma esperar seu
+> próprio timeout de conexão do zero.
 
 ## Primitivos completos do MCP (no `MCPClient`)
 
@@ -249,8 +252,9 @@ async with MCPClient("https://meu-mcp/mcp/") as mcp:
   disponível em `mcp_tools(client, allowed_tools=[...])` direto).
 - `tools=` pula o `list_tools()` (e o round-trip) quando você já listou antes
   — liste uma vez com `await mcp_tools(client, ...)` e reuse entre chamadas
-  (ex.: um chatbot chamando `run_agent` por mensagem); `allowed_tools=` é
-  ignorado quando `tools=` também é passado.
+  (ex.: um chatbot chamando `run_agent` por mensagem); `allowed_tools=`
+  continua sendo aplicado por cima de `tools=` (filtra a lista já pronta),
+  então dá pra listar tudo sem filtro e restringir por chamada.
 - `on_tool_call(call)`/`on_tool_result(call, result)` (sync ou async) correm a
   cada tool call; `on_tool_call` devolvendo `False` **veta** a chamada (o
   modelo recebe um `tool_result` de erro, sem a tool executar).
