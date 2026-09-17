@@ -37,6 +37,9 @@ print(res.cost, res.usage, res.iterations)
 - Para um servidor **MCP**, passe `mcp_client=MCPClient(...)` e use **`arun`**
   (async): o agente lista as tools do servidor e as usa junto das suas.
   `mcp_allowed_tools=[...]` restringe quais tools do MCP ficam visíveis.
+  `mcp_tools_cache=[...]` pula o `list_tools()` (e o round-trip) toda vez que
+  `arun`/`astream` roda — liste uma vez com `await mcp_tools(mcp_client)` e
+  passe aqui; sem isso, cada chamada relista as tools do zero.
 - **`AgentResult.stopped_by_limit`**: `True` quando o loop parou por bater em
   `max_iterations` com `tool_calls` ainda pendentes — nesse caso `text`/
   `messages` NÃO são a resposta final do modelo, são o último passo do loop

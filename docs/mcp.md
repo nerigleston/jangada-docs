@@ -170,6 +170,11 @@ mcp = MCPClient("https://meu-mcp/mcp/", auth_token="TOKEN", keep_alive=True)
 tools = await mcp.list_tools()   # conecta sozinho aqui
 ```
 
+> Seguro para uso concorrente: se várias chamadas percebem a conexão caída ao
+> mesmo tempo (ex.: um servidor concorrente atendendo requests em paralelo),
+> só a primeira reconecta de verdade — as outras esperam e reaproveitam a
+> sessão nova, em vez de disparar reconexões por cima umas das outras.
+
 ## Primitivos completos do MCP (no `MCPClient`)
 
 Além de **tools**, o `MCPClient` cobre o resto do protocolo:
@@ -242,6 +247,10 @@ async with MCPClient("https://meu-mcp/mcp/") as mcp:
   só do histórico (sem adicionar mensagem de usuário vazia).
 - `allowed_tools=` filtra pelo nome antes do modelo ver as tools (também
   disponível em `mcp_tools(client, allowed_tools=[...])` direto).
+- `tools=` pula o `list_tools()` (e o round-trip) quando você já listou antes
+  — liste uma vez com `await mcp_tools(client, ...)` e reuse entre chamadas
+  (ex.: um chatbot chamando `run_agent` por mensagem); `allowed_tools=` é
+  ignorado quando `tools=` também é passado.
 - `on_tool_call(call)`/`on_tool_result(call, result)` (sync ou async) correm a
   cada tool call; `on_tool_call` devolvendo `False` **veta** a chamada (o
   modelo recebe um `tool_result` de erro, sem a tool executar).
