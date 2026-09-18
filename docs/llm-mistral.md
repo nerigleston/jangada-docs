@@ -77,3 +77,15 @@ dois caminhos — a interface é idêntica aos outros providers.
 
 Relacionado: [Matriz de capacidades](capabilities.md),
 [Providers e chaves](providers.md), [Structured output](structured-output.md).
+
+## O que mudou na 1.9.0
+
+- **Tools nativas via Conversations API**: `web_search()` (ou
+  `web_search(premium=True)`), `code_execution()`, `image_generation()` e
+  `file_search(stores=[...])` (document library) fazem a chamada ir por
+  `beta.conversations`. Function tools do usuário funcionam junto; com tools
+  nativas, `stream` e `parse` não são suportados. Com `params={"store": True}`, o
+  turno seguinte continua a conversa no servidor. Veja [Tools nativas](native-tools.md).
+- **Embeddings em lote**: listas grandes são fatiadas em várias requisições.
+- Resposta vazia vira `ServerError`; argumentos de tool com JSON inválido ficam em
+  `metadata["raw_arguments"]`.

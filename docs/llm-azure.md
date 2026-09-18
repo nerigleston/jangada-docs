@@ -62,3 +62,14 @@ llm = LLM("azure", "meu-deploy", azure_endpoint="https://...", api_version="2024
 
 Relacionado: [OpenAI](llm-openai.md), [Matriz de capacidades](capabilities.md),
 [Providers e chaves](providers.md).
+
+## O que mudou na 1.9.0
+
+- **`profile_model=`**: o `model` na Azure é o nome do deployment, então as regras
+  por modelo (gpt-5 sem `temperature`, `max_completion_tokens`…) não tinham como
+  casar. Informe o modelo base: `LLM("azure", "meu-deploy", profile_model="gpt-5")`.
+- **Responses API pela API v1**: MCP remoto e [tools nativas](native-tools.md) (web
+  search, file search, code interpreter, image generation) usam
+  `<endpoint>/openai/v1/`, sem `api_version`. O chat.completions segue com
+  `api_version` (padrão `2024-10-21`, sobrescrevível).
+- Chunks de filtro de conteúdo (sem `choices`) não quebram mais o stream.

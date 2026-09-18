@@ -12,6 +12,7 @@ os tipos normalizados (`Message`/`Completion`) para o SDK nativo.
 | Mistral     | `mistral`    | `MISTRAL_API_KEY`    | `jangada-ai[mistral]`       |
 | OpenRouter  | `openrouter` | `OPENROUTER_API_KEY` | `jangada-ai[openai]`        |
 | DeepSeek    | `deepseek`   | `DEEPSEEK_API_KEY`   | `jangada-ai[openai]`        |
+| Ollama      | `ollama`     | `OLLAMA_API_KEY` (opcional; local não usa) | `jangada-ai[ollama]` |
 
 ## OpenRouter (gateway para centenas de modelos)
 

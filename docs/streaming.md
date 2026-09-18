@@ -28,6 +28,18 @@ Veja [Retry e fallback](retry-fallback.md) para a política completa.
 - Para custo e tokens use as chamadas não-stream (`complete`/`parse`), que
   retornam `usage`/`cost` na resposta — veja [Custo e tokens](cost.md).
 
+## O que mudou na 1.9.0
+
+- Chunks sem conteúdo (ex.: o primeiro chunk da Azure com o filtro de conteúdo)
+  não quebram mais o stream, e a conexão é fechada se você parar de consumir o
+  iterador no meio.
+- Depois do stream, o provider guarda `usage` e `finish_reason` em
+  `llm.provider.last_stream` (OpenAI, Azure, DeepSeek, Mistral, Ollama). É por
+  instância: com várias threads usando o mesmo `LLM`, leia logo após o stream.
+- O stream é reportado à [observabilidade](observability.md) ao final.
+- Com tools nativas, o stream emite só o texto (Anthropic/Gemini/OpenAI); em
+  Mistral e Ollama, stream + tools nativas levanta `UnsupportedError`.
+
 ## Exemplo
 
 [`examples/async_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/async_example.py) — script executável.

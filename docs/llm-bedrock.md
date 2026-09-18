@@ -55,3 +55,20 @@ jangada é a mesma dos outros providers.
 
 Relacionado: [Anthropic](llm-anthropic.md) (mesma estratégia de structured),
 [Matriz de capacidades](capabilities.md), [Providers e chaves](providers.md).
+
+## O que mudou na 1.9.0
+
+- **Campos do Converse repassados**: `extra={"additionalModelRequestFields": ...}`,
+  `guardrailConfig`, `promptVariables`, `requestMetadata`, `performanceConfig`,
+  `serviceTier` e `additionalModelResponseFieldPaths` vão direto para a chamada
+  (antes eram descartados em silêncio).
+- **`tool_choice="none"`** não envia as tools (exceto quando o histórico já tem
+  `toolUse`, que a API exige).
+- **Stream**: erro no meio do stream (throttling, `ModelStreamErrorException`) vira
+  erro normalizado também no `astream`, e o stream é fechado se você parar de
+  consumir.
+- **Tools nativas (Amazon Nova)**: `web_search()` vira o `nova_grounding` e
+  `code_execution()` o `nova_code_interpreter` (Nova 2). Exige perfis `us.*` e a
+  permissão IAM `bedrock:InvokeTool`. Veja [Tools nativas](native-tools.md).
+- **Usage com cache** (`cache_read_tokens`/`cache_write_tokens`) e system em lista
+  de partes com o texto extraído.

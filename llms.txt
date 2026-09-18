@@ -1,7 +1,8 @@
 # jangada
 
 > `jangada` é uma camada fina e adaptável sobre os SDKs oficiais de LLM
-> (Anthropic, OpenAI, Groq, Gemini). Permite trocar **provider / model /
+> (Anthropic, OpenAI, Groq, Gemini, Mistral, Ollama, Bedrock, Azure, Vertex,
+> OpenRouter, DeepSeek). Permite trocar **provider / model /
 > api_key** sem mudar o resto do código, com templates `{{ }}`, structured
 > output (Pydantic), vision, ingestão de documentos (docx/pdf/csv/xlsx),
 > streaming, async, retry com backoff e fallback automático por tipo de erro.
@@ -22,7 +23,7 @@ instalado.
 ## Documentação
 
 - [Começando](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/getting-started.md): instalação, primeira chamada e como trocar de provider.
-- [Providers e chaves](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/providers.md): os sete providers, variáveis de ambiente e precedência de chave.
+- [Providers e chaves](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/providers.md): os providers (Anthropic, OpenAI, Groq, Gemini, Mistral, Ollama, OpenRouter, DeepSeek, Bedrock, Azure, Vertex), variáveis de ambiente e precedência de chave.
 - [Matriz de capacidades](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/capabilities.md): o que cada provider suporta (vision, áudio, structured, params).
 - [OpenAI](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-openai.md): modelos, recursos e quirks do provider OpenAI.
 - [Groq](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-groq.md): modelos, recursos e quirks do provider Groq.
@@ -33,9 +34,11 @@ instalado.
 - [Vertex AI](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-vertex.md): provider `vertex` — Gemini no Google Cloud (ADC + project/location); herda tudo do provider `gemini`.
 - [Mistral](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-mistral.md): provider `mistral` — SDK oficial `mistralai`; texto, vision, streaming, structured (helper nativo `chat.parse`), tools, embeddings (`mistral-embed`), OCR/Document AI (`ocr()` com `mistral-ocr-latest`) e transcrição Voxtral; env `MISTRAL_API_KEY`.
 - [DeepSeek](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-deepseek.md): provider `deepseek` — base_url próprio sobre o SDK `openai` (mesma receita do OpenRouter); modelos `deepseek-v4-flash`/`-pro`/`-flash-vision-exp`; modo `thinking` via `extra=` (empacotado em `extra_body`); sem JSON Schema estrito (vai direto pro JSON Object mode), sem MCP server-side, sem transcrição; env `DEEPSEEK_API_KEY`.
+- [Ollama](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-ollama.md): provider `ollama` — API nativa do Ollama (SDK `ollama`, extra `jangada-ai[ollama]`); modelos locais sem chave e Ollama Cloud (`host=`/`OLLAMA_HOST`, `OLLAMA_API_KEY`); `num_ctx`/`keep_alive`/`think` via `extra=`; `parse` com `format`=JSON Schema; tools com schema aninhado; vision; embeddings; `web_search`/`web_fetch`.
 - [Parâmetros e perfis](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/parameters.md): params canônicos (temperature, max_tokens, ...) e normalização por modelo (gpt-5, gemini-3.x); thinking do Gemini via `extra=`/`params=`.
 - [Structured output](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/structured-output.md): `parse()`/`aparse()` com Pydantic, uniforme entre providers; trunca por max_tokens levanta `TruncatedError`; JSON fora do schema levanta `OutputValidationError` e entra no failover (tenta o próximo modelo); `comp.parsed` é coagido do texto se o SDK devolver None.
 - [Tools (function calling)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/tools.md): `tools=[...]` (OpenAI/Groq), baixo nível, e ferramentas pré-prontas (`jangada_ai.prebuilt`, ex.: tavily_search; conectores Brasil `prebuilt.br` — CPF/CNPJ, CEP, dados de CNPJ, bancos, feriados, DDD, taxas — via BrasilAPI, sem chave).
+- [Tools nativas (server-side)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/native-tools.md): `tools=[web_search(), url_context(), code_execution(), file_search(...), google_maps(...), computer_use(), image_generation()]` — uma API só para as tools executadas pelo provider (Gemini/Vertex, Anthropic, OpenAI/Azure via Responses, Groq, OpenRouter, Mistral, Bedrock Nova, Ollama), misturáveis com function tools; `native_tool(provider, spec)` repassa o objeto nativo do SDK; saída normalizada (`citations`, `server_tool_calls`, `usage["server_tool_requests"]`); blocos nativos preservados no histórico via `assistant_message()`; taxa por chamada em `cost`.
 - [MCP (Model Context Protocol)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/mcp.md): CLIENTE — `mcp_servers=[...]` (remoto por URL: Anthropic/OpenAI/Groq, server-side; e client-side por sessão no Gemini) + `MCPClient` (tools/resources/prompts/roots/sampling). SERVIDOR — `serve_mcp(tools=[...]|agent=...)`/`build_mcp_app()` expõe suas funções/Agent como servidor MCP (stdio ou streamable-http), sobre o `Server` low-level (não FastMCP). Exemplo pronto: jangada-docs-mcp (https://github.com/nerigleston/jangada-docs-mcp) — serve a doc do jangada ao editor via `uvx`.
 - [Vision](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/vision.md): imagens via `ImagePart`/`Image`, tradução por SDK; `images=[("rótulo", img)]` para rotular cada imagem; controle total via `Message`/`history`.
 - [Detecção de objetos](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/detect.md): `detect_objects()` com bounding boxes em pixels; `detect_objects_full()` devolve também custo/uso (`DetectionResult`); funciona em qualquer provider com visão.
@@ -53,6 +56,7 @@ instalado.
 - [Erros normalizados](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/errors.md): hierarquia única via `classify()` e conjuntos TRANSIENT/DEFAULT_FAILOVER.
 - [Fluxos e Graph](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/flows.md): encadeamento sequencial (`Flow`) e roteamento condicional/paralelo (`Graph`).
 - [Agentes e times](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/agents.md): `Agent` (papel + tools sync/async + MCP + memória + `history=` multi-turno + `astream` + `card()` A2A + servidor A2A `jangada[a2a]`: `A2AHandler`/`build_a2a_app`, com `resolver` multi-tenant e isolamento por `tenant_key`) e `Squad` (sequencial/hierárquico com delegação); `plan()` e `RAGMemory`.
+- [Gemini Interactions e Deep Research](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/interactions.md): `GeminiInteractions` — Interactions API do Gemini (stateful com `previous_interaction_id`), `create`/`stream`/`get`/`cancel`/`wait`, loop de function calling `run`, `deep_research()` em background com polling; preview, exige `google-genai>=2.3`.
 - [Guardrails de escopo](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/guardrails.md): `ScopeGuard` mantém a LLM num domínio e barra falas (blocklist + judge LLM); recusa via `Completion`, input/output, sync/async.
 - [Debug](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/debug.md): trace passo a passo por agente.
 - [Estendendo (novo provider)](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/extending.md): contrato `Provider`, atalho `_OpenAICompatible` e invariantes.

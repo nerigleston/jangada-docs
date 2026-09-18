@@ -1,7 +1,7 @@
 # jangada — documentação completa (llms-full.txt)
 
 > Camada fina e adaptável sobre os SDKs oficiais de LLM (Anthropic, OpenAI,
-> Groq, Gemini). Troque provider/model/api_key sem mudar o resto do código.
+> Groq, Gemini, Mistral, Ollama...). Troque provider/model/api_key sem mudar o resto do código.
 > Este arquivo concatena toda a documentação de docs/ para consumo em um
 > único fetch. Instalação: pip install jangada-ai (importa-se como import jangada_ai).
 
@@ -60,6 +60,22 @@ LLM("gemini", "gemini-2.5-flash")
 Chaves de API vêm de `api_key=`, da variável de ambiente do provider, ou de um
 arquivo `.env` detectado na importação. Precedência:
 `api_key=` explícito > variável de ambiente > `.env`.
+
+## Extras e ciclo de vida (1.9.0)
+
+Extras novos: `jangada-ai[ollama]` (provider Ollama) e `pypdfium2` dentro de
+`[files]` (PDF escaneado em vision). O `[mcp]` aceita `mcp` 1.x e 2.x, e o `[all]`
+inclui ollama e mcp.
+
+O `LLM` fecha as conexões HTTP do SDK com `close()`/`aclose()` ou como context
+manager — útil em workers e processos de vida longa:
+
+```python
+from jangada_ai import LLM
+
+async with LLM("openai", "gpt-5-mini") as llm:
+    print((await llm.acomplete("Oi!")).text)
+```
 
 ## Próximos passos
 
@@ -308,6 +324,19 @@ rag = RAG(embedder, store, chat=chat)
 O resto do código continua igual. Ajustes finos (`min_score`, `filter`, `weights`,
 `max_context_chars`) estão em [RAG](rag.md).
 
+## Versão assíncrona (1.9.0+)
+
+Todo o fluxo tem par async — útil em APIs (FastAPI) e para indexar muitos
+documentos sem bloquear o event loop:
+
+```python
+await rag.aadd_document("politica.pdf")
+resp = await rag.aask("Posso devolver depois de 30 dias?")
+```
+
+No modo híbrido (padrão), `min_score` é comparado com a **similaridade de cosseno**
+da busca vetorial — valores como `0.3`–`0.5` fazem sentido.
+
 ## Próximos passos
 
 - Receita completa: [`examples/cookbook/03_chatbot_rag.py`](https://github.com/nerigleston/jangada-docs/blob/main/examples/cookbook/03_chatbot_rag.py).
@@ -405,6 +434,7 @@ os tipos normalizados (`Message`/`Completion`) para o SDK nativo.
 | Mistral     | `mistral`    | `MISTRAL_API_KEY`    | `jangada-ai[mistral]`       |
 | OpenRouter  | `openrouter` | `OPENROUTER_API_KEY` | `jangada-ai[openai]`        |
 | DeepSeek    | `deepseek`   | `DEEPSEEK_API_KEY`   | `jangada-ai[openai]`        |
+| Ollama      | `ollama`     | `OLLAMA_API_KEY` (opcional; local não usa) | `jangada-ai[ollama]` |
 
 ## OpenRouter (gateway para centenas de modelos)
 
@@ -514,6 +544,7 @@ cada provider consegue fazer por baixo.
 | Structured output (`parse`)     | ✅     | ✅   | ✅     | ✅        | ✅      |
 | Tools / function calling        | ✅     | ✅   | ✅     | ✅        | ✅      |
 | MCP (`mcp_servers=`)            | ✅ URL | ✅ URL | ✅ sessão⁴ | ✅ URL | ❌      |
+| Tools nativas (`web_search()`…)⁵ | ✅ (Responses) | ⚠️ compound/gpt-oss | ✅ | ✅ | ✅ (Conversations) |
 | Embeddings (`embed`)            | ✅     | ❌   | ✅     | ❌        | ✅      |
 | Streaming (`stream`/`astream`)  | ✅     | ✅   | ✅     | ✅        | ✅      |
 | Vision / imagens (`images=`)    | ✅     | ⚠️¹  | ✅     | ✅        | ⚠️¹     |
@@ -532,6 +563,10 @@ por isso funciona em todos. Veja [Documentos](documents.md).
 ³ A convenção de bounding box (0–1000) é nativa do Gemini, que é o mais preciso.
 ⁴ MCP no Gemini é **client-side por sessão** e só no async (`acomplete`); os
 demais (exceto Mistral) são **remoto por URL** (server-side). Veja [MCP](mcp.md).
+⁵ Tools executadas pelo provider (busca na web, url context, code execution,
+file search…). O suporte varia por tool e por modelo; também existem no
+OpenRouter, no Bedrock (Amazon Nova) e no [Ollama](llm-ollama.md) (executadas
+pelo adapter). Matriz completa em [Tools nativas](native-tools.md).
 
 ## Como cada um implementa o structured output
 
@@ -550,6 +585,7 @@ demais (exceto Mistral) são **remoto por URL** (server-side). Veja [MCP](mcp.md
 - [Gemini](llm-gemini.md)
 - [Anthropic](llm-anthropic.md)
 - [Mistral](llm-mistral.md)
+- [Ollama](llm-ollama.md) (modelos locais e Ollama Cloud)
 
 Os parâmetros canônicos e os perfis por modelo (gpt-5, gemini-3.x) estão em
 [Parâmetros e perfis](parameters.md).
@@ -595,6 +631,22 @@ llm = LLM("openai", "gpt-4o-mini")
 - **Resposta** (`Completion`): `text`, `usage` (`input_tokens`/`output_tokens`
   derivados de `prompt_tokens`/`completion_tokens`), `raw` com o objeto nativo.
 - **Erros**: traduzidos por `errors.classify()` para a hierarquia normalizada.
+
+## O que mudou na 1.9.0
+
+- **Tools nativas → Responses API.** Com `web_search()`, `file_search()`,
+  `code_execution()` (code interpreter), `image_generation()` ou `computer_use()`
+  em `tools=`, a chamada vai pela Responses API (veja [Tools nativas](native-tools.md)).
+  Sem tools nativas, continua no chat.completions.
+- **Structured output strict**: o schema passa a listar todas as propriedades em
+  `required` (exigência do modo strict), e o fallback para JSON mode cobre mais
+  mensagens de "schema não suportado".
+- **Saída cortada no `parse`** vira `TruncatedError`; recusa (`refusal`) vira
+  `OutputValidationError`.
+- **Usage**: `cache_read_tokens` (prompt caching) e `reasoning_tokens` (modelos de
+  raciocínio) no `usage`; o custo aplica o desconto de cache.
+- **Embeddings em lote**: listas grandes são fatiadas em várias requisições (`llm.embed(textos, batch_size=...)`).
+- **Série o (o1/o3/o4)** tem regra de perfil: `max_completion_tokens` e sem sampling.
 
 ## Exemplo de structured
 
@@ -657,6 +709,17 @@ Velocidade e custo de inferência baixos — ótimo para transcrição em lote
 (`whisper-large-v3-turbo`) e respostas de baixa latência. Combine como
 **fallback** ou **primário** com OpenAI (mesmo dialeto). Veja
 [Transcrição de áudio](audio.md) e [Retry e fallback](retry-fallback.md).
+
+## O que mudou na 1.9.0
+
+- **Tools nativas**: nos modelos `groq/compound*`, `web_search()`, `web_fetch()` e
+  `code_execution()` ligam as tools embutidas (`compound_custom`); nos `openai/gpt-oss-*`,
+  `web_search()` vira `browser_search` e `code_execution()` vira `code_interpreter`.
+  O compound não aceita function tools do usuário na mesma chamada. Veja
+  [Tools nativas](native-tools.md).
+- **Structured output**: campos com default passam a constar em `required` no modo
+  strict (o Groq recusava o schema), e o fallback para JSON Object mode dispara em
+  mais mensagens de erro.
 
 ---
 
@@ -741,6 +804,25 @@ LLM("gemini", "gemini-3-pro").complete("...",  params={"thinking_budget": 1024})
 É o único que cobre vision, detecção e áudio **sem endpoints separados** —
 tudo via `generateContent`. Veja [Matriz de capacidades](capabilities.md).
 
+## O que mudou na 1.9.0
+
+- **`ToolCall.id`** é o `id` que a API devolve (ou `"nome#i"` quando não vem) — não
+  mais o nome da função. Duas chamadas paralelas à mesma função não colidem. O
+  nome real continua sendo usado no `function_response`, e históricos antigos
+  (id igual ao nome) seguem funcionando.
+- **Parâmetro de tool chamado `title`** não some mais do schema (o limpador de
+  schema removia a chave `title` também dentro de `properties`).
+- **Prompt bloqueado por safety** levanta `BadRequestError` com o motivo
+  (`prompt_feedback.block_reason`), sem retry nem fallback.
+- **Usage**: `output_tokens` inclui os tokens de thinking (`reasoning_tokens` mostra
+  quantos) e `input_tokens` inclui os tokens de resultado de tools nativas — ambos
+  são cobrados; antes o custo saía subestimado.
+- **Tools nativas**: Google Search, URL context, code execution, file search,
+  Google Maps e computer use (veja [Tools nativas](native-tools.md)). Para a
+  Interactions API e os agentes (Deep Research), veja [Interactions](interactions.md).
+- `transcribe` honra `language=`; `parse` com resposta vazia levanta erro em vez de
+  devolver `parsed=None`; system em lista de partes tem o texto extraído.
+
 ---
 
 # Anthropic (Claude)
@@ -791,6 +873,192 @@ llm = LLM("anthropic", "claude-opus-4-8")
 
 Relacionado: [Matriz de capacidades](capabilities.md),
 [Structured output](structured-output.md).
+
+## O que mudou na 1.9.0
+
+- **Compatível com `anthropic>=1.0`.** O SDK 1.0 removeu `temperature`, `top_p` e
+  `top_k` da assinatura de `messages.create()` — passá-los dava `TypeError`. A lib
+  agora os envia pelo corpo (`extra_body`), então `LLM("anthropic", ..., temperature=0.2)`
+  funciona em qualquer versão do SDK.
+- **Extended thinking com tools em vários turnos**: os blocos `thinking`/
+  `redacted_thinking` (com assinatura) são preservados e reenviados antes do
+  `tool_use`, como a API exige. No `parse`, o thinking é desligado (o
+  `tool_choice` forçado é incompatível com ele).
+- **Tools nativas**: `web_search`, `web_fetch` e `code_execution` (veja
+  [Tools nativas](native-tools.md)); os blocos com `encrypted_content` voltam intactos
+  no histórico e `pause_turn` é continuado automaticamente.
+- **Usage com cache**: `input_tokens` inclui os tokens de cache; `cache_read_tokens`
+  e `cache_write_tokens` aparecem quando há prompt caching, e o custo usa o preço
+  de cache.
+- Recusa sem `tool_use` no `parse` levanta `OutputValidationError` (entra no
+  failover); resposta sem conteúdo vira `ServerError`.
+
+---
+
+# Ollama
+
+Provider `ollama`. Adapter sobre o SDK oficial `ollama`, falando com a **API
+nativa** do [Ollama](https://docs.ollama.com) (`/api/chat`, `/api/embed`).
+Roda modelos **locais** (sem chave, sem custo por token) e também o **Ollama
+Cloud**.
+
+```bash
+pip install "jangada-ai[ollama]"     # SDK ollama>=0.6
+ollama serve                         # servidor local em http://localhost:11434
+ollama pull llama3.2
+```
+
+- **`provider=`**: `"ollama"`
+- **Variável de ambiente**: `OLLAMA_API_KEY` (**opcional**; só para o Cloud e
+  para web search/fetch)
+- **Host**: `host=` no construtor > env `OLLAMA_HOST` > `http://localhost:11434`
+
+```python
+from jangada_ai import LLM
+
+llm = LLM("ollama", "llama3.2")          # funciona sem chave nenhuma
+print(llm.complete("Diga olá em português.").text)
+```
+
+> **Por que a API nativa e não a compatível com OpenAI (`/v1`)?** Só a nativa
+> expõe `num_ctx` (tamanho do contexto), `keep_alive`, `format` com JSON Schema
+> completo e `think`. Pela `/v1` não dá para aumentar o contexto, e o Ollama
+> corta o prompt em silêncio quando ele passa do limite.
+
+## Local vs Cloud
+
+```python
+# local (padrão)
+LLM("ollama", "qwen3")
+
+# outro servidor da rede
+LLM("ollama", "qwen3", host="http://192.168.0.10:11434")
+
+# Ollama Cloud: host explícito + OLLAMA_API_KEY no ambiente (ou api_key=)
+LLM("ollama", "gpt-oss:120b", host="https://ollama.com")
+```
+
+Ter `OLLAMA_API_KEY` no ambiente **não** troca o host sozinho: para usar o
+Cloud, passe `host="https://ollama.com"`. Com chave, o adapter envia
+`Authorization: Bearer <chave>`.
+
+## Opções nativas via `extra=`
+
+Os params canônicos (`temperature`, `top_p`, `top_k`, `seed`, `stop`) vão em
+`options`, e `max_tokens` vira `options.num_predict`. O resto vai por `extra=`:
+
+| Chave | Onde vai | Para quê |
+|---|---|---|
+| `num_ctx` | `options` | Tamanho da janela de contexto. **A jangada não define default**: o valor padrão depende da versão do servidor e da VRAM. Para agentes/RAG, passe algo como `8192`–`32768`. |
+| `keep_alive` | topo | Quanto tempo o modelo fica carregado (ex.: `"10m"`, `-1`) |
+| `think` | topo | Thinking: `True`/`False` ou `"low"`/`"medium"`/`"high"` (gpt-oss só aceita níveis) |
+| `format` | topo | `"json"` ou um JSON Schema (o `parse` já preenche) |
+| `logprobs`, `top_logprobs` | topo | Log-probabilidades |
+| qualquer outra (`min_p`, `repeat_penalty`…) | `options` | Opções do modelo |
+
+```python
+llm = LLM("ollama", "llama3.2", temperature=0.2,
+          extra={"num_ctx": 8192, "keep_alive": "10m"})
+```
+
+## O que faz
+
+- **Texto** (`complete`/`acomplete`) e **streaming** (`stream`/`astream`). No
+  stream, o usage e o `finish_reason` chegam no último chunk e ficam em
+  `llm.provider.last_stream`.
+- **Structured output** (`parse`/`aparse`): envia o JSON Schema do modelo
+  Pydantic em `format`. Pela doc do Ollama, o Cloud **não** suporta `format`
+  hoje.
+
+  ```python
+  from pydantic import BaseModel
+
+  class Pais(BaseModel):
+      nome: str
+      capital: str
+
+  print(llm.parse("Fale do Brasil.", Pais).parsed)
+  ```
+
+- **Tools / function calling**: com schema aninhado completo (parâmetros
+  Pydantic, `anyOf`). A API não devolve id por chamada, então a jangada gera
+  `"nome#i"`. O resultado volta como `role="tool"` com `tool_name`.
+  `tool_choice="none"` não envia as tools; os demais valores são ignorados (a
+  API não tem esse parâmetro).
+- **Vision** (`images=`): as imagens vão em base64 na mensagem (use um modelo com
+  visão, ex.: `llama3.2-vision`, `qwen2.5vl`, `gemma3`).
+- **Thinking**: com `extra={"think": True}`, o raciocínio vai para
+  `comp.raw.message.thinking` e **não** entra em `comp.text`. Em respostas com
+  tool calls, ele é guardado e reenviado no histórico.
+- **Embeddings** (`embed`/`aembed`): via `/api/embed`, em lotes de 64, com
+  `dimensions=` e `truncate=` opcionais.
+
+  ```python
+  emb = LLM("ollama", "embeddinggemma")
+  vetor = emb.embed("jangada é uma embarcação")
+  ```
+
+- **Documentos** (`files=`): extração de texto local (comum a todos os providers).
+
+## Web search e web fetch
+
+O Ollama tem busca e leitura de páginas na web pela API do Cloud (conta
+gratuita, exige `OLLAMA_API_KEY`). Há dois jeitos de usar:
+
+**Como tool nativa**: `web_search()`/`web_fetch()` em `tools=`. Como o Ollama não
+executa essas tools no servidor, **o adapter executa** quando o modelo as chama
+(até 5 rodadas, somando usage) e devolve a resposta final com `server_tool_calls`
+e `citations`, igual aos outros providers. Suas function tools continuam
+funcionando junto: se o modelo chamar uma delas, a resposta volta com
+`tool_calls` normalmente. `stream` e `parse` com essas tools não são suportados.
+
+```python
+from jangada_ai import LLM, web_search
+
+llm = LLM("ollama", "qwen3", extra={"num_ctx": 32768})
+comp = llm.complete("Quais são as novidades do Python 3.14?", tools=[web_search()])
+print(comp.text)
+for c in comp.citations:
+    print("-", c.title, c.url)
+```
+
+**Direto no provider**: devolve dados, sem passar pelo modelo.
+
+```python
+resultados = llm.provider.web_search("jangada nordeste", max_results=3)
+# [{"title": ..., "url": ..., "content": ...}, ...]
+pagina = llm.provider.web_fetch("https://ollama.com")
+# {"title": ..., "url": ..., "content": ..., "links": [...]}
+# async: await llm.provider.aweb_search(...) / aweb_fetch(...)
+```
+
+Veja [Tools nativas](native-tools.md).
+
+## Erros (com dica)
+
+- **Modelo não baixado** (404) → `NotFoundError` com a dica `ollama pull <modelo>`.
+  Entra no failover padrão, então um `LLM(...).with_fallback(...)` cai para o
+  próximo modelo.
+- **Servidor fora do ar** → `APIConnectionError` com a dica `ollama serve`.
+- **Erro no meio do stream** (vem como objeto `{"error": ...}` no NDJSON) →
+  `ServerError`.
+
+## O que NÃO suporta (levanta erro claro)
+
+- **MCP server-side** (`mcp_servers=`): `UnsupportedError`. MCP **client-side**
+  (`MCPClient`/`run_agent`) funciona normalmente.
+- **Transcrição de áudio** e **OCR**: `UnsupportedError`.
+- **Web search/fetch sem `OLLAMA_API_KEY`**: `UnsupportedError`.
+
+## Custo
+
+Modelo local não tem custo por token, e o Cloud é cobrado por assinatura. Por
+isso `comp.cost` vem `None` (não há regra de preço para o Ollama). Os tokens
+continuam em `comp.usage` (`input_tokens` = `prompt_eval_count`, `output_tokens`
+= `eval_count`).
+
+Relacionado: [Tools nativas](native-tools.md), [Providers e chaves](providers.md),
+[Matriz de capacidades](capabilities.md), [Parâmetros](parameters.md).
 
 ---
 
@@ -858,6 +1126,23 @@ modelo novo com contrato diferente, adicione uma regra em `profiles.py` em vez d
 espalhar `if`s.
 
 Veja [Providers](providers.md) e [Estendendo](extending.md).
+
+## O que mudou na 1.9.0
+
+- **`profile_model=`**: quando o `model` não é o nome real do modelo (ex.: o nome do
+  deployment na Azure), diga qual é o modelo base para a lib aplicar as regras
+  certas: `LLM("azure", "meu-deploy", profile_model="gpt-5")` tira `temperature` e
+  usa `max_completion_tokens`, como no gpt-5. Não é enviado ao SDK.
+- **Aliases de perfil**: `vertex` herda as regras do `gemini` e `azure` as do
+  `openai`. Para um provider seu: `jangada_ai.profiles.register_alias("meu", "openai")`.
+- **Série o (o1/o3/o4)**: `max_tokens` vira `max_completion_tokens` e sampling é
+  removido, como no gpt-5.
+- **`thinking_budget` no Gemini 3.x** é graduado: até 1024 → `LOW`, até 8192 →
+  `MEDIUM` (só nos modelos Flash), acima → `HIGH`. No `gemini-2.5-pro`,
+  `thinking_level="MINIMAL"` vira 128 (o mínimo aceito), não 0.
+- **Remover um parâmetro** de um `LLM` derivado: `llm.with_params(temperature=REMOVE)`
+  (`from jangada_ai import REMOVE`); `None` continua sendo ignorado.
+- `max_retries` negativo levanta `ValueError` na criação do `LLM`.
 
 ## Exemplo
 
@@ -1007,9 +1292,9 @@ llm.complete("Qual a cotação do dólar hoje?", tools=[tavily_search])
 |------|-----------|
 | `calculator` | avalia expressões aritméticas (seguro, via `ast`) |
 | `current_datetime` | data/hora atuais (fuso IANA) |
-| `fetch_url` | baixa uma página e devolve o texto legível |
+| `fetch_url` | baixa uma página e devolve o texto legível (bloqueia rede interna por padrão) |
 | `wikipedia_search` | resumo da Wikipedia (sem chave) |
-| `http_request` | requisição HTTP genérica (GET/POST/...) |
+| `http_request` | requisição HTTP genérica (GET/POST/...; bloqueia rede interna por padrão) |
 
 **Com chave (lê do ambiente, ou passe `api_key=`):**
 
@@ -1058,9 +1343,344 @@ Veja também [Structured output](structured-output.md) (que no Anthropic já usa
 tool-forcing por baixo) e [Observabilidade](observability.md) (as tool calls
 aparecem no trace).
 
+## O que mudou na 1.9.0
+
+- **Tipos de parâmetro.** `int | None` (sintaxe do Python 3.10+) vira o tipo
+  opcional correto no schema também no Python 3.10–3.13; `Union` de vários tipos
+  vira `anyOf`; um parâmetro anotado com um `BaseModel` do Pydantic vira o schema
+  do modelo, e `jangada_ai.coerce_args(fn, args)` converte o dict recebido na
+  instância (o `Agent` já faz isso sozinho). Anotações que não resolvem (forward
+  ref quebrada) não derrubam mais a função inteira.
+- **Argumentos com JSON inválido** não viram `{}` em silêncio: o `ToolCall` traz
+  `metadata["raw_arguments"]` e `metadata["args_error"] = True`.
+- **Tools nativas** (web search, code execution…) entram na mesma lista `tools=`
+  — veja [Tools nativas](native-tools.md).
+
+### Ferramentas prontas mais seguras
+
+- **`fetch_url` / `http_request` bloqueiam rede interna por padrão.** Só `http`/
+  `https`; o host é resolvido e loopback, rede privada, link-local (inclui o
+  metadata da nuvem, `169.254.169.254`), reservado e multicast são recusados —
+  também em cada redirect (máx. 5). O corpo é lido até 5 MB. Isso impede que um
+  prompt injection numa página faça o agente ler seu `.env` ou a rede da empresa.
+  Para chamar um serviço interno de propósito: `allow_private=True` na chamada ou
+  a env `JANGADA_HTTP_ALLOW_PRIVATE=1`.
+- **Erros de rede viram mensagem para o modelo** (URL malformada, conexão
+  resetada, resposta incompleta), em vez de exceção que derruba o loop.
+- **`fetch_url`** respeita o charset do servidor e decodifica entidades HTML.
+- **`calculator`** limita expoente (±1000) e tamanho dos números (10 mil dígitos) —
+  `9**9**9` não trava mais o processo.
+- **CNPJ alfanumérico.** `validar_cnpj`, `formatar_cnpj`, `validar_documento` e
+  `consultar_cnpj` aceitam o formato novo da Receita (letras nas 12 primeiras
+  posições, dígitos verificadores numéricos), ex.: `12.ABC.345/01DE-35`.
+
 ## Exemplo
 
 [`examples/tools_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/tools_example.py) — script executável.
+
+---
+
+# Tools nativas (server-side)
+
+A lib trabalha com dois tipos de tool:
+
+- **Function tools** ([Tools](tools.md)): você declara a função, o modelo pede
+  para chamá-la e **o seu código** executa.
+- **Tools nativas** (server-side / built-in): **o provider** executa do lado
+  dele (busca na web, leitura de URL, execução de código, busca em arquivos,
+  mapas, geração de imagem). Você só liga a tool e recebe a resposta pronta, com
+  as fontes.
+
+A jangada tem **uma API só** para as tools nativas de todos os providers. Você
+escreve `web_search()` e o adapter traduz para `google_search` no Gemini,
+`web_search_20250305` na Anthropic, `{"type": "web_search"}` na Responses API da
+OpenAI, `browser_search` no Groq, plugin `web` no OpenRouter, `nova_grounding` no
+Bedrock, e assim por diante.
+
+```python
+from jangada_ai import LLM, web_search
+
+llm = LLM("gemini", "gemini-3.8-flash")
+comp = llm.complete("Qual foi a última decisão do Copom sobre a Selic?",
+                    tools=[web_search()])
+print(comp.text)
+for c in comp.citations:          # fontes normalizadas, iguais em todo provider
+    print("-", c.title, c.url)
+```
+
+Tools nativas e function tools **se misturam na mesma lista**, nos providers
+que permitem:
+
+```python
+def cotacao_interna(moeda: str) -> str:
+    "Cotação interna da empresa para uma moeda."
+    return "5,10" if moeda.upper() == "USD" else "indisponível"
+
+comp = llm.complete(
+    "Compare o dólar de hoje (busque na web) com a nossa cotação interna.",
+    tools=[web_search(), cotacao_interna],
+)
+```
+
+Se o provider não suporta uma tool (ou uma opção que **restringe** o
+comportamento, como `allowed_domains`), a chamada levanta `UnsupportedError`
+**antes** de chegar ao SDK. A lib nunca ignora em silêncio uma restrição que
+você pediu. Opções que são só dica (`max_uses`, `user_location` num provider
+que não tem esse campo) são ignoradas com log em nível debug.
+
+## API
+
+Todos os construtores estão em `jangada_ai` (e em `jangada_ai.native_tools`) e
+devolvem um `NativeTool`.
+
+| Construtor | O que faz | Opções canônicas |
+|---|---|---|
+| `web_search()` | Busca na web | `max_uses`, `allowed_domains`, `blocked_domains`, `user_location={"city","region","country","timezone"}` |
+| `web_fetch()` / `url_context()` | Lê o conteúdo de URLs citadas no prompt | `max_uses`, `allowed_domains`, `blocked_domains` |
+| `code_execution()` | Executa código no sandbox do provider | `container` (reuso), `files` (ids de arquivo, OpenAI) |
+| `file_search(stores)` | Busca em arquivos indexados no provider | `stores` (vector stores / file search stores / libraries), `top_k`, `filter` |
+| `google_maps()` | Grounding com Google Maps | `lat`, `lng`, `enable_widget` |
+| `computer_use()` | O modelo pede ações de tela; **seu código** executa | `environment`, `display_width`, `display_height` |
+| `image_generation()` | Gera imagem como tool | opções nativas via `**opts` |
+
+Todos aceitam também:
+
+- **`**opts`**: qualquer opção desconhecida vai direto para o payload nativo do
+  provider. Exemplo: `web_search(search_context_size="high")` na OpenAI.
+- **`provider_overrides={"anthropic": {...}}`**: opções aplicadas só naquele
+  provider. Útil quando o mesmo código roda com fallback entre providers.
+- **Anthropic**: `version=` escolhe a versão da server tool. Os defaults são
+  `web_search_20250305`, `web_fetch_20250910` e `code_execution_20250825`, que
+  funcionam sem *programmatic tool calling*.
+
+```python
+from jangada_ai import web_search
+
+busca = web_search(
+    max_uses=3,
+    blocked_domains=["exemplo-ruim.com"],
+    provider_overrides={"anthropic": {"version": "web_search_20260209"}},
+)
+```
+
+### `native_tool`: o objeto nativo, sem tradução
+
+Para uma opção ou versão que a camada canônica ainda não cobre, passe o objeto
+(ou dict) **do próprio SDK** com `native_tool(provider, spec)`. Ele vai para o
+payload exatamente como você escreveu, só naquele provider. Em qualquer outro
+provider levanta `UnsupportedError`.
+
+Isso substitui a gambiarra de montar o payload nativo à mão ou chamar o SDK por
+fora da jangada: você continua com retry, fallback, custo, observabilidade e o
+`Completion` normalizado.
+
+```python
+from google.genai import types
+from jangada_ai import LLM, native_tool
+
+llm = LLM("gemini", "gemini-3.8-flash")
+comp = llm.complete(
+    "Notícias de hoje sobre energia solar no Nordeste",
+    tools=[native_tool("gemini", types.Tool(
+        google_search=types.GoogleSearch(exclude_domains=["exemplo.com"]),
+    ))],
+)
+
+claude = LLM("anthropic", "claude-sonnet-5")
+comp = claude.complete(
+    "Resuma as notícias de hoje sobre o Copom",
+    tools=[native_tool("anthropic", {
+        "type": "web_search_20260318", "name": "web_search", "max_uses": 2,
+    })],
+)
+```
+
+## Matriz por provider
+
+| Provider | `web_search` | `web_fetch` | `code_execution` | `file_search` | outras |
+|---|---|---|---|---|---|
+| **Gemini** | `google_search` | `url_context` | `code_execution` | `file_search` (stores = `file_search_store_names`) | `google_maps`, `computer_use` |
+| **Vertex AI** | idem Gemini | idem | idem | idem | idem |
+| **Anthropic** | `web_search_*` | `web_fetch_*` | `code_execution_*` | — | `computer_use` só via `native_tool` |
+| **OpenAI / Azure** | `web_search` | — | `code_interpreter` | `file_search` (stores = `vector_store_ids`) | `image_generation`, `computer_use` |
+| **Groq** `groq/compound*` | `web_search` embutida | `visit_website` | `code_interpreter` | — | — |
+| **Groq** `openai/gpt-oss-*` | `browser_search` | — | `code_interpreter` | — | — |
+| **OpenRouter** | plugin `web` | — | — | — | — |
+| **DeepSeek** | — | — | — | — | nenhuma |
+| **Mistral** | `web_search` (`premium=True` → `web_search_premium`) | — | `code_interpreter` | `document_library` (stores = `library_ids`) | `image_generation` |
+| **Bedrock** (Amazon Nova) | `nova_grounding` (Nova Premier / Nova 2) | — | `nova_code_interpreter` (Nova 2) | — | — |
+| **Ollama** | executada pelo adapter | executada pelo adapter | — | — | — |
+
+"—" = `UnsupportedError`.
+
+### Restrições que você precisa saber
+
+- **Gemini**: misturar tools nativas com function tools liga
+  `include_server_side_tool_invocations` (Gemini 3). `allowed_domains` não
+  existe na busca do Gemini (`UnsupportedError`); `blocked_domains` vira
+  `exclude_domains`. `container`/`files` do `code_execution` não existem no
+  Gemini.
+- **Vertex AI**: aceita as mesmas tools, mas **não** mistura tool nativa com
+  function tool na mesma chamada (o campo não existe no Vertex) →
+  `UnsupportedError`.
+- **Anthropic**: `allowed_domains` e `blocked_domains` juntos dão erro (a API
+  exige um ou outro). `stop_reason="pause_turn"` é continuado automaticamente
+  (até 5 vezes, somando usage e custo). O `container` do code execution é
+  reusado a partir do histórico.
+- **OpenAI / Azure**: com qualquer tool nativa, a chamada vai pela **Responses
+  API** (não chat.completions). `blocked_domains` não existe na busca da OpenAI.
+- **Groq**: os modelos `groq/compound*` têm as tools embutidas e **não aceitam
+  function tools do usuário** junto. Nos `openai/gpt-oss-*`, a busca não aceita
+  filtro de domínio. Outros modelos do Groq não têm tools nativas.
+- **OpenRouter**: `web_search()` vira o plugin `web`; `engine=` (ex.: `"exa"`,
+  `"native"`) e os domínios são repassados ao plugin.
+- **DeepSeek**: a API ignora tools built-in, então nem
+  `native_tool("deepseek", ...)` é aceito.
+- **Mistral**: as tools nativas só existem na **Conversations API**; com elas a
+  chamada vai por `beta.conversations` em vez de `chat.complete`. Por padrão o
+  histórico é reenviado a cada turno. Com `params={"store": True}` a conversa
+  fica guardada no servidor e o turno seguinte usa `append`. Function tools
+  funcionam junto; `stream` e `parse` com tools nativas não.
+- **Bedrock**: só modelos **Amazon Nova** (perfis `us.*`) e a permissão IAM
+  `bedrock:InvokeTool`. As server tools da Anthropic **não** existem no Bedrock.
+- **Ollama**: a API do Ollama não executa busca no servidor. `web_search()` e
+  `web_fetch()` viram function tools que **o adapter executa** (via Ollama
+  Cloud, até 5 rodadas, somando usage) e devolve a resposta final com
+  `server_tool_calls` e `citations`. Exige `OLLAMA_API_KEY`. `stream` e `parse`
+  com essas tools não são suportados. Veja [Ollama](llm-ollama.md).
+- **`parse()` com tools nativas**: só no Gemini (structured output + built-in
+  tools). Nos outros providers levanta `UnsupportedError`.
+- **`computer_use`**: a lib expõe o pedido de ação em `server_tool_calls`, mas
+  **não executa** o loop de tela. Executar a ação e devolver o screenshot é
+  com o seu código.
+- **Cache**: chamadas com tools (nativas ou não) não entram no cache.
+
+## O que volta no `Completion`
+
+- **`comp.text`**: a resposta final (só texto; código executado não entra aqui).
+- **`comp.citations`**: lista de
+  `Citation(url, title, cited_text, start, end, source)`. `start`/`end` são
+  offsets em `comp.text`, quando o provider informa.
+- **`comp.server_tool_calls`**: lista de
+  `ServerToolCall(type, input, output, id)`, o que o provider executou (queries de busca, código + saída, URLs
+  lidas...). É informativo: a lib não executa nada.
+- **`comp.usage["server_tool_requests"]`**: contagem por tool, ex.:
+  `{"web_search": 2}`. É o que o provider cobra por chamada.
+- **`comp.metadata`**: dados opacos do provider que precisam voltar no
+  histórico (ver multi-turn abaixo).
+
+```python
+comp = llm.complete("Calcule a soma dos 50 primeiros primos.",
+                    tools=[code_execution()])
+for call in comp.server_tool_calls:
+    print(call.type, call.input, "->", call.output)
+```
+
+> **Gemini + Google Search: exiba as sugestões de busca.** A política do Google
+> exige mostrar as *Search Suggestions* junto da resposta com grounding. O HTML
+> pronto vem em `comp.metadata["search_entry_point"]`.
+
+## Multi-turn: `assistant_message()` preserva os blocos nativos
+
+Algumas APIs exigem receber de volta, **intactos**, os blocos gerados pelas
+tools nativas: `encrypted_content` da Anthropic, partes
+`tool_call`/`tool_response` com `thought_signature` do Gemini, output items da
+OpenAI. `comp.assistant_message()` copia esses blocos para
+`Message.metadata`, e o adapter os reenvia exatamente como vieram. Basta usar o
+histórico normalmente:
+
+```python
+from jangada_ai import LLM, Message, url_context, web_search
+
+llm = LLM("anthropic", "claude-sonnet-5")
+p1 = "Quais foram as principais notícias de tecnologia de hoje?"
+comp = llm.complete(p1, tools=[web_search()])
+
+hist = [Message(role="user", content=p1), comp.assistant_message()]
+comp2 = llm.complete("Aprofunde a segunda notícia.", history=hist,
+                     tools=[web_search(), url_context()])
+```
+
+Não monte a mensagem do assistant à mão a partir de `comp.text`: você perde os
+blocos, e a Anthropic responde 400.
+
+## Custo
+
+Além dos tokens, várias tools nativas têm **taxa por chamada**. A jangada soma
+essas taxas em `Completion.cost`, a partir de `usage["server_tool_requests"]`:
+
+| Provider | Tool | Preço | Fonte |
+|---|---|---|---|
+| Anthropic | `web_search` | US$ 10 / 1.000 buscas | platform.claude.com (web search tool) |
+| Anthropic | `web_fetch` | sem taxa (só tokens) | platform.claude.com (web fetch tool) |
+| OpenAI / Azure | `web_search` | US$ 10 / 1.000 chamadas | developers.openai.com/api/docs/pricing |
+| OpenAI / Azure | `file_search` | US$ 2,50 / 1.000 chamadas | developers.openai.com/api/docs/pricing |
+| Gemini 3.x | `web_search` | US$ 14 / 1.000 queries | ai.google.dev/gemini-api/docs/pricing |
+| Gemini 2.5 | `web_search` | US$ 35 / 1.000 prompts com grounding | ai.google.dev/gemini-api/docs/pricing |
+| Gemini 3.x / 2.5 | `google_maps` | US$ 14 / 1.000 queries · US$ 25 / 1.000 prompts | ai.google.dev/gemini-api/docs/pricing |
+| Mistral | `web_search` / `code_execution` | US$ 30 / 1.000 chamadas | mistral.ai/pricing/api |
+| Mistral | `image_generation` | US$ 100 / 1.000 imagens | mistral.ai/pricing/api |
+| Mistral | `file_search` (document library) | US$ 0,01 / chamada | mistral.ai/pricing/api |
+
+Sem taxa confirmada (o custo dessas tools **não** entra em `cost`): Groq
+compound/browser search, OpenRouter (varia por engine), Bedrock Nova grounding,
+code interpreter da OpenAI (cobrado por sessão de container). As cotas grátis
+dos providers (ex.: Gemini) **não** são descontadas.
+
+Preços são aproximados e se atualizam sozinhos (ver [Custo](cost.md)). Registre
+uma taxa própria com `jangada_ai.pricing.register_tool_fee(tool, usd_per_1k, ...)`.
+
+## Com `Agent`
+
+`Agent` aceita tools nativas misturadas com as suas funções. As nativas não são
+executadas localmente: entram no `tool_trace` marcadas com `"server": True`.
+
+```python
+from jangada_ai import LLM, Agent, web_search
+
+pesquisador = Agent(
+    LLM("gemini", "gemini-3.8-flash"),
+    role="Pesquisador",
+    goal="Responder com fontes atuais",
+    tools=[web_search(), cotacao_interna],
+)
+res = pesquisador.run("Como o dólar fechou hoje frente à nossa cotação interna?")
+```
+
+## Exemplos por provider
+
+```python
+from jangada_ai import LLM, code_execution, file_search, google_maps, web_search
+
+# Gemini: busca + Maps com localização do usuário
+LLM("gemini", "gemini-3.8-flash").complete(
+    "Cafés abertos agora perto de mim", tools=[google_maps(lat=-8.05, lng=-34.9)])
+
+# OpenAI: busca em vector store próprio
+LLM("openai", "gpt-5").complete(
+    "O que diz o contrato sobre multa?", tools=[file_search(["vs_123"], top_k=5)])
+
+# Groq compound: busca + código embutidos (sem function tools do usuário)
+LLM("groq", "groq/compound").complete(
+    "Qual a população de Recife dividida pela de Olinda?",
+    tools=[web_search(), code_execution()])
+
+# OpenRouter: plugin web com engine escolhido
+LLM("openrouter", "openai/gpt-5-mini").complete(
+    "Novidades do Python 3.14", tools=[web_search(engine="exa", max_results=3)])
+
+# Mistral: busca premium (notícias) pela Conversations API
+LLM("mistral", "mistral-medium-latest").complete(
+    "Manchetes de economia de hoje", tools=[web_search(premium=True)])
+
+# Bedrock: grounding do Amazon Nova
+LLM("bedrock", "us.amazon.nova-premier-v1:0").complete(
+    "Quem é o atual presidente do Banco Central?", tools=[web_search()])
+```
+
+Relacionado: [Tools (function calling)](tools.md), [Ollama](llm-ollama.md),
+[Gemini Interactions](interactions.md), [Custo](cost.md),
+[Agentes](agents.md).
 
 ---
 
@@ -1385,6 +2005,50 @@ Requer o extra `jangada-ai[mcp]`; para HTTP, também `starlette` + um servidor A
 **Exemplo pronto:** [`jangada-docs-mcp`](https://github.com/nerigleston/jangada-docs-mcp)
 é um servidor MCP (feito com `serve_mcp`) que expõe toda a documentação do jangada
 ao seu editor — rode sem clonar: `uvx --from git+https://github.com/nerigleston/jangada-docs-mcp jangada-docs-mcp`.
+
+## O que mudou na 1.9.0
+
+- **Compatível com `mcp` 1.x e 2.x.** O extra `[mcp]` agora aceita `mcp>=1.0,<3`;
+  cliente, servidor, SSE, streamable-HTTP e stdio foram validados de ponta a ponta
+  nas duas versões.
+- **Retry só no que é seguro repetir.** Com `keep_alive=True`, a reconexão
+  automática repete sozinha apenas operações sem efeito colateral (`list_*`,
+  `read_resource`, `get_prompt`, `ping`). `call_tool` só é repetido quando a
+  requisição comprovadamente **não saiu** (falha de conexão); em timeout de
+  leitura ele reconecta para as próximas chamadas mas **não** repete a atual (evita
+  criar um pedido em dobro). Para repetir mesmo assim: `MCPClient(..., retry_tools=True)`.
+  Erros 401/403 (e demais 4xx, exceto 408/429) não disparam reconexão.
+- **`timeout=` vale para a sessão inteira**, inclusive no stdio — uma tool travada
+  no servidor não pendura mais o cliente para sempre.
+- **Allowlist aplicada na execução.** `run_agent(..., allowed_tools=[...])` (e o
+  `Agent` com `mcp_allowed_tools`) só executa tools que foram de fato oferecidas ao
+  modelo; qualquer outro nome volta como `tool_result` de erro, sem executar.
+- **SSE detectado pelo caminho da URL** (`/sse?token=...` funciona).
+- **Sampling com aprovação.** `MCPClient(..., sampling_llm=llm, on_sampling_request=fn)`:
+  `fn(request)` (sync ou async) devolvendo `False` recusa o pedido do servidor. O
+  `stopReason` reflete o motivo real (`maxTokens`, `endTurn`, `toolUse`) e
+  `prompt_messages` preserva imagens.
+- **Segredos fora do `repr`.** Token e headers não aparecem mais em `repr(MCPClient)`
+  nem em `repr(MCPServer)`.
+
+### Servidor: autenticação e proteção contra DNS rebinding
+
+```python
+from jangada_ai import serve_mcp
+
+serve_mcp(
+    "minhas-tools", tools=[consultar_pedido],
+    transport="streamable-http", host="0.0.0.0", port=8000,
+    auth_token="segredo",                      # exige Authorization: Bearer segredo (401 sem ele)
+    allowed_hosts=["mcp.minhaempresa.com"],     # proteção contra DNS rebinding
+    allowed_origins=["https://app.minhaempresa.com"],
+)
+```
+
+`build_mcp_app(...)` aceita os mesmos `auth_token`/`allowed_hosts`/
+`allowed_origins`/`security_settings`. Tools **síncronas** (e agente síncrono) rodam
+numa thread, sem bloquear as outras sessões. Se o `agent=` exposto tiver `memory`,
+a lib avisa: a memória é compartilhada entre todos os clientes.
 
 ## Exemplo
 
@@ -1730,6 +2394,34 @@ Um PDF **sem** camada de texto (escaneado) levanta `DocumentError` sugerindo
 
 Relacionado: [Vision](vision.md), [Structured output](structured-output.md).
 
+## O que mudou na 1.9.0
+
+- **PDF escaneado com `mode="vision"` funciona de verdade**: cada página é
+  renderizada em PNG (até `Document(..., max_pages=20)`) e vai como imagem. Usa o
+  `pypdfium2` (agora no extra `[files]`) ou o `pymupdf`, se instalado; sem nenhum
+  dos dois, o erro diz o que instalar. A lib nunca manda um PDF como se fosse
+  imagem (isso dava 400 no provider). Para montar as partes você mesmo:
+  `jangada_ai.files.to_parts(doc)` devolve uma parte por página.
+- **Encoding de CSV**: tenta UTF-8 (com e sem BOM), depois cp1252 e latin-1 — CSV
+  exportado do Excel brasileiro não vira mais `�`.
+- **CSV/TSV grandes** são lidos em streaming até `max_rows`; `.tsv` usa o extrator
+  próprio.
+- **PDF protegido**: tenta abrir com senha vazia; se não der, levanta
+  `DocumentError` claro (PDF corrompido também).
+- **xlsx**: célula de fórmula sem valor calculado aparece como
+  `[fórmula sem valor calculado: =...]` em vez de vazia; `|` e quebras de linha nas
+  células são escapados na tabela markdown.
+- **Bytes sem nome**: o formato é detectado pelo conteúdo (PDF, PNG, JPEG, GIF,
+  WEBP, BMP, docx, xlsx).
+
+```python
+from jangada_ai import LLM, Document
+
+llm = LLM("gemini", "gemini-3.5-flash")
+comp = llm.complete("Transcreva a nota fiscal.",
+                    files=[Document("nota_escaneada.pdf", mode="vision", max_pages=3)])
+```
+
 ## Exemplo
 
 [`examples/files_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/files_example.py) — script executável.
@@ -2000,6 +2692,46 @@ RAG(emb, store, chunker=semantic_chunker(emb))   # frases do mesmo assunto ficam
 Relacionado: [Documentos](documents.md) (extração de texto reaproveitada no RAG)
 e [Observabilidade](observability.md).
 
+## O que mudou na 1.9.0
+
+- **API async completa**: `aadd_texts`, `aadd_document`, `async_texts`,
+  `async_document`, `asearch` e `aask` (usam `aembed`/`acomplete`; o store roda em
+  thread). O `Reranker` ganhou `arerank`, e há `aexpand_queries`/`acompress_results`.
+- **Busca híbrida corrigida no pgvector/Mongo.** A fusão (RRF) usava a identidade
+  do objeto e, nesses bancos, nunca juntava o mesmo trecho vindo das duas buscas —
+  devolvia duplicados. Agora usa uma chave estável (id → documento+hash → conteúdo).
+- **`min_score` no modo híbrido** filtra pela **similaridade vetorial** (antes da
+  fusão), não pelo score do RRF (que fica perto de 0,03 e zerava os resultados).
+- **O índice em memória não é mais alterado pela busca**: `parent_document` e
+  `compress=True` trabalham em cópias.
+- **Prompt padrão** delimita o contexto recuperado entre as tags `<contexto>` e
+  instrui o modelo a tratá-lo como dado, não como instrução (mitiga prompt
+  injection vindo de documentos). Prompts customizados com chaves literais (ex.:
+  um exemplo de JSON) não quebram mais.
+- **Embeddings em lotes** de 128 textos (os adapters OpenAI/Azure/OpenRouter e
+  Mistral também fatiam), então PDFs grandes não estouram o limite do provider.
+- **pgvector**:
+  - modelos com mais de 2000 dimensões (ex.: `gemini-embedding-001`,
+    `text-embedding-3-large`, 3072) são indexados via `halfvec` (exige pgvector ≥
+    0.7), até 4000; acima disso a tabela fica sem índice HNSW, com aviso;
+  - `add()`/`add_texts` devolvem quantos trechos foram **realmente** inseridos
+    (duplicatas por documento+hash são descartadas);
+  - o embedding é calculado fora da transação e do advisory lock, a conexão é
+    protegida por lock entre threads, e há `close()` + `with PgVectorStore(...)`;
+  - o nome da tabela é validado (aceita `schema.tabela`).
+- **Mongo Atlas**: grava o `hash` dos trechos, aceita `filter_fields=[...]` (campos
+  de metadata declarados como `filter` no índice — necessário para `filter=` na
+  busca), cai para a busca no cliente só em erro do Atlas (com aviso) e tem
+  `close()` + context manager.
+
+```python
+store = vector_store("postgresql://...", table="docs", text_config="portuguese")
+with store:
+    rag = RAG(chat=LLM("openai", "gpt-5-mini"), embedder=LLM("openai", "text-embedding-3-small"), store=store)
+    await rag.aadd_document("manual.pdf")
+    resp = await rag.aask("Qual o prazo de garantia?", min_score=0.3)  # min_score = cosseno
+```
+
 ## Exemplo
 
 [`examples/rag_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/rag_example.py) — script executável.
@@ -2035,6 +2767,18 @@ Veja [Retry e fallback](retry-fallback.md) para a política completa.
   `files=` e `params=` das outras chamadas.
 - Para custo e tokens use as chamadas não-stream (`complete`/`parse`), que
   retornam `usage`/`cost` na resposta — veja [Custo e tokens](cost.md).
+
+## O que mudou na 1.9.0
+
+- Chunks sem conteúdo (ex.: o primeiro chunk da Azure com o filtro de conteúdo)
+  não quebram mais o stream, e a conexão é fechada se você parar de consumir o
+  iterador no meio.
+- Depois do stream, o provider guarda `usage` e `finish_reason` em
+  `llm.provider.last_stream` (OpenAI, Azure, DeepSeek, Mistral, Ollama). É por
+  instância: com várias threads usando o mesmo `LLM`, leia logo após o stream.
+- O stream é reportado à [observabilidade](observability.md) ao final.
+- Com tools nativas, o stream emite só o texto (Anthropic/Gemini/OpenAI); em
+  Mistral e Ollama, stream + tools nativas levanta `UnsupportedError`.
 
 ## Exemplo
 
@@ -2090,6 +2834,17 @@ LLM(
 
 Os erros são normalizados (com `status_code`) — veja [Erros](errors.md). Para o
 custo agregado entre candidatos, veja [Custo e tokens](cost.md).
+
+## O que mudou na 1.9.0
+
+- Quando todos os candidatos falham, o erro final é enviado à
+  [observabilidade](observability.md) como observation `ERROR` (uma vez por chamada,
+  não por tentativa).
+- `embed`/`aembed` agora têm retry com backoff em erro transitório — mas **sem
+  fallback** para outro modelo: vetores de modelos diferentes não são comparáveis
+  e corromperiam o índice.
+- Recusas e respostas vazias viram erros normalizados que entram no failover (veja
+  [Erros](errors.md)); prompt bloqueado por safety no Gemini não é repetido.
 
 ## Exemplo
 
@@ -2183,6 +2938,60 @@ número exato de um modelo específico.
 - Totais agregados em [Fluxos e Graph](flows.md).
 - No [Debug passo a passo](debug.md), o custo de cada etapa é exibido no trace.
 
+## O que mudou na 1.9.0
+
+### Contrato de usage
+
+Todos os adapters devolvem `usage` no mesmo formato:
+
+| Chave | Significado |
+|-------|-------------|
+| `input_tokens` | **total** de input, já incluindo tokens de cache |
+| `output_tokens` | total de output (no Gemini inclui os tokens de thinking) |
+| `cache_read_tokens` | parte do input lida do cache (opcional) |
+| `cache_write_tokens` | parte do input gravada no cache (opcional) |
+| `reasoning_tokens` | parte do output gasta raciocinando (só informativa) |
+| `server_tool_requests` | chamadas de tools nativas, ex. `{"web_search": 2}` |
+
+`compute_cost` cobra o input não-cacheado a preço cheio, a leitura/escrita de cache
+pelo preço de cache do modelo, o output uma única vez (reasoning **não** é cobrado
+em dobro) e soma a **taxa por chamada** das tools nativas. Antes, cache e thinking
+eram ignorados — Gemini com thinking e Claude com prompt caching saíam bem mais
+baratos que a fatura real.
+
+### Preço de cache, faixa acima de 200k e taxas de tools
+
+- Cada regra pode ter `cache_read`/`cache_write` (USD por 1M tokens). Sem eles, a
+  lib usa o multiplicador documentado da família (Claude 0,1×/1,25×; Gemini 0,1×;
+  gpt-5 0,1×; gpt-4.1/o3/o4-mini 0,25×; gpt-4o/o1/o3-mini 0,5×; desconhecido 1×).
+- `above_200k=(in, out)` aplica outro preço quando o prompt passa de 200k tokens
+  (ex.: Gemini 2.5 Pro, 3.1 Pro).
+- Taxas por chamada de tools nativas (catálogo `tool_fees`): web search da
+  Anthropic e da OpenAI US$ 10/1k, Google Search no Gemini 3.x US$ 14/1k queries,
+  file search da OpenAI US$ 2,50/1k, conectores da Mistral etc. Entram no
+  `Completion.cost`. Cotas gratuitas **não** são descontadas.
+- O casamento de modelo ganhou fronteira: `claude-opus-4` volta a custar 15/75
+  (não herda o preço do Opus 4.5+), `gpt-5-pro`/`o3-mini` não pegam a regra do
+  modelo base, e um modelo sem regra devolve `None` em vez de um preço errado.
+- Um hit de cache da própria lib devolve `cost=0.0` e `cached=True`.
+
+```python
+from jangada_ai import register_price
+from jangada_ai.pricing import register_tool_fee, compute_cost
+
+register_price(r"meu-modelo", 1.0, 4.0, cache_read=0.1, above_200k=(2.0, 8.0))
+register_tool_fee("web_search", 12.0, provider="meu-provider")   # USD por 1000 chamadas
+
+compute_cost("claude-sonnet-5", {"input_tokens": 10_000, "cache_read_tokens": 8_000,
+                                  "output_tokens": 500,
+                                  "server_tool_requests": {"web_search": 1}},
+             provider="anthropic")
+```
+
+O refresh remoto do catálogo agora só aceita `https`, valida tipos e tamanhos,
+rejeita regex perigosa e **substitui** o lote remoto a cada atualização (antes
+acumulava).
+
 ## Exemplo
 
 [`examples/retry_cost_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/retry_cost_example.py) — script executável.
@@ -2256,6 +3065,22 @@ confira.
 `complete`/`parse` e suas versões async compartilham a mesma chave (a `Completion`
 cacheada preserva `parsed`, `usage` e `cost`). O cache é **local ao processo** (a
 `Completion` é mantida em memória; o vector store é usado só para a similaridade).
+
+## O que mudou na 1.9.0
+
+- **A chave inclui o schema do `parse`**: `parse(p, A)` seguido de `parse(p, B)`
+  não devolve mais o objeto do tipo `A`.
+- **`SemanticCache` separa por contexto**: system, histórico anterior e partes
+  não-texto (imagens) entram no escopo. "sim" ou "continue" em conversas
+  diferentes não dão mais hit com a resposta de outra conversa.
+- **O hit devolve uma cópia** com `cost=0.0` e `cached=True` — somar custos num
+  `Flow`/`Agent` não conta de novo uma chamada que não foi paga, e mexer no objeto
+  devolvido não altera o que está no cache.
+- **Evicção e expiração limpam o vector store** do `SemanticCache` (antes as
+  entradas mortas ficavam lá e derrubavam a taxa de acerto).
+- **Erro no cache não derruba a chamada**: falha no `get`/`set` (ex.: o embedder do
+  cache semântico tomou rate limit) vira miss, com log em `DEBUG`.
+- `ExactCache` e `SemanticCache` são seguros entre threads.
 
 ---
 
@@ -2446,6 +3271,28 @@ Em [app.jangada.dev.br](https://app.jangada.dev.br) você acompanha tudo:
   observations ao mesmo trace de forma idempotente no backend.
 - Os campos de custo/tokens vêm de [Custo e tokens](cost.md).
 
+## O que mudou na 1.9.0
+
+- **Falhas também viram trace.** Quando uma chamada esgota retry e fallback, a lib
+  envia uma observation com `status="ERROR"` e o erro (tipo + mensagem, truncado)
+  — antes só os sucessos apareciam no dashboard. Para reportar manualmente:
+  `jangada_ai.observability.auto_report_error(erro, provider=..., model=...)`.
+- **Início real da chamada.** `startedAt` agora marca quando a chamada começou (não
+  quando terminou); `auto_report(..., started_at=...)` aceita epoch ou `datetime`.
+- **Stream e transcrição reportados.** `stream`/`astream` enviam o texto acumulado
+  ao final (capability `streaming`); `transcribe` também reporta (`audio`). Hits de
+  cache ganham a capability `cache`.
+- **Envio com fila limitada.** Em vez de uma thread por chamada, há uma fila (1000
+  eventos) com poucos workers; se o endpoint ficar lento e a fila encher, os
+  eventos excedentes são descartados — `dropped_count()` diz quantos. `flush()` e o
+  `atexit` esperam a fila esvaziar com prazo.
+- **Só HTTPS.** O endpoint (e o do `feedback`) precisa ser `https://` (`http` só em
+  localhost), para a chave e os prompts não trafegarem em claro.
+- **Output truncado** como o input, e `embed` não envia mais todos os vetores (só
+  dimensões e contagem acima de um teto).
+- Falhas de envio vão para o log `DEBUG` do logger `jangada_ai` (nunca derrubam a
+  chamada).
+
 ---
 
 # Erros normalizados
@@ -2492,6 +3339,24 @@ Todas herdam de `errors.LLMError`. As principais categorias:
 
 Você pode customizar `retry_on=` e `backoff_on=` por `LLM` — veja
 [Retry e fallback](retry-fallback.md).
+
+## O que mudou na 1.9.0
+
+- **Mais status HTTP mapeados**: 408 → `APITimeoutError` e 409 → `ServerError`
+  (ambos transitórios, entram no retry); 413 → `BadRequestError`.
+- **Recusas e respostas vazias viram erro normalizado.** Resposta sem `choices`,
+  recusa da OpenAI no `parse` (`parsed=None`) ou Claude sem `tool_use` no `parse`
+  levantam `OutputValidationError` / `ServerError` — que entram no failover — em
+  vez de `IndexError`/`StopIteration` crus.
+- **Saída cortada no `parse` da OpenAI** (`LengthFinishReasonError`) vira
+  `TruncatedError`, com a dica de aumentar `max_tokens`.
+- **Gemini com prompt bloqueado por safety** levanta `BadRequestError` (sem retry
+  nem fallback — é determinístico), em vez de um `ServerError` "transitório".
+- **`classify(e, provider, *, request=False)`**: com `request=True`, um
+  `ValidationError` do Pydantic vindo da **montagem da requisição** (SDKs como
+  google-genai e mistralai validam o request) vira `BadRequestError`, não
+  `OutputValidationError` — não dispara mais failover para outro modelo por um
+  `extra=` inválido. Os adapters já usam isso nos caminhos que não são `parse`.
 
 ---
 
@@ -2568,6 +3433,23 @@ g.parallel(
 `FlowResult` e `GraphResult` somam `usage` e `cost` de todas as etapas — útil
 para observabilidade. Detalhes em [Custo e tokens](cost.md) e, para inspecionar
 passo a passo, [Debug](debug.md).
+
+## O que mudou na 1.9.0
+
+- **`Flow.arun(**contexto)`**: versão assíncrona do `Flow`.
+- **`Graph(max_steps=50)`**: teto de nós executados num `run`; um router cíclico
+  que nunca termina levanta `RuntimeError` em vez de gastar sem limite.
+- **Nó revisitado** (ciclo) ou step com nome repetido não sobrescreve o anterior:
+  as visitas aparecem como `nome#2`, `nome#3` em `completions`/`durations`, e
+  `usage`/`cost` somam todas. `parsed("nome")` devolve a última visita.
+- **Ramos paralelos com `on_error="raise"`**: quando um ramo falha, os irmãos ainda
+  pendentes são cancelados (antes continuavam rodando e gastando tokens).
+- **Nomes reservados.** Nós, steps, ramos e variáveis de contexto não podem se
+  chamar `system`, `history`, `params`, `tools`, `tool_choice`, `files`, `images`,
+  `schema`, `prompt`, `mcp_servers` ou `self` — eles colidiam com os argumentos de
+  `complete` e causavam erros estranhos. Agora levantam `ValueError` na hora.
+- `then()`/`route()` num bloco paralelo levantam erro (antes eram ignorados em
+  silêncio); `join` apontando para nó inexistente tem mensagem própria.
 
 ## Exemplo
 
@@ -2715,7 +3597,7 @@ Rotas servidas:
 
 | Rota | O quê |
 |------|-------|
-| `GET /.well-known/agent.json` | Agent Card do agente principal |
+| `GET /.well-known/agent-card.json` (e o legado `/.well-known/agent.json`) | Agent Card do agente principal |
 | `GET /agents` | catálogo (lista de Agent Cards) |
 | `POST /` | JSON-RPC `message/send` (JSON), `message/stream` (SSE), `tasks/get`, `tasks/cancel` |
 | `POST /agents/{name}` | idem, para um agente específico do catálogo |
@@ -2822,12 +3704,261 @@ for tarefa in plan(llm, "Lançar uma newsletter sobre IA", max_tasks=5):
     print("-", tarefa)
 ```
 
+## O que mudou na 1.9.0
+
+- **Squad hierárquico de verdade assíncrono.** No `Squad.arun`, a tool de
+  delegação é `async` e chama `await membro.arun()` — o event loop não trava e o
+  membro mantém `mcp_client` e tools async. O gerente é uma **cópia** do agente
+  original, então `on_tool_call` (veto), `on_tool_result`, MCP e memória valem
+  também no modo hierárquico.
+- **Custo e rastro dos membros.** `SquadResult.usage`/`cost` somam o gerente **e**
+  os membros delegados (`cost_complete` só é `True` se todos tiverem preço);
+  `outputs` traz a saída de cada membro e `steps` uma entrada por delegação.
+  Papéis repetidos viram chaves únicas (`Revisor`, `Revisor#2`).
+- **Nomes das tools de delegação** são transliterados (acentos saem), deduplicados
+  com sufixo (`_2`, `_3`) e truncados em 64 caracteres.
+- **`Agent.astream(prompt, chunk_size=24)`**: sem tools faz streaming real do
+  provider; com tools resolve o loop com `acomplete` e emite o texto final em
+  pedaços (sem gerar a resposta duas vezes). Ao terminar, `agent.last_stream_result`
+  traz o `AgentResult` (usage, cost, `tool_trace`, `stopped_by_limit`).
+- **Tools nativas misturadas.** `Agent(llm, tools=[web_search(), minha_funcao])`
+  funciona: a tool nativa roda no provider e aparece no `tool_trace` com
+  `"server": True` (veja [Tools nativas](native-tools.md)).
+- **MCP: allowlist aplicada na execução.** Uma tool MCP que não foi oferecida ao
+  modelo (fora de `mcp_allowed_tools`) **não é executada** — volta como
+  `tool_result` de erro, mesmo que o modelo invente o nome.
+- **Parâmetro `BaseModel` em tools** recebe a instância validada do modelo
+  (`jangada_ai.coerce_args`).
+- **`plan()`** levanta `ValueError` claro se a resposta vier sem `parsed`;
+  `RAGMemory` loga falhas (logger `jangada_ai`) em vez de engoli-las e não grava
+  turnos que pararam por limite.
+
+### A2A (card e servidor)
+
+`Agent.card()` segue a spec A2A ≥ 0.3: traz `protocolVersion` (padrão `"0.3.0"`) e
+`preferredTransport="JSONRPC"`, aceita `security_schemes=`/`security=`, e os
+parâmetros das tools viram `tags` (o campo `skills[].parameters`, fora da spec,
+saiu). O `A2AHandler` serve o card em **`/.well-known/agent-card.json`** (e mantém
+`/.well-known/agent.json`), limita memória com `max_tasks`/`task_ttl` e
+`max_contexts`/`context_ttl` (padrão 1000 itens / 1 h), isola `tasks/get|cancel`
+por tenant, devolve `-32002` ao cancelar task já terminada, `-32700`/`-32600`/
+`-32602` para JSON inválido/corpo inválido/pergunta vazia, e não expõe a mensagem
+da exceção no `-32603` (o detalhe vai para o log).
+
+```python
+from jangada_ai import Agent, LLM, Squad, web_search
+
+pesquisador = Agent(LLM("anthropic", "claude-sonnet-5"), role="Pesquisador",
+                    tools=[web_search(max_uses=3)])
+redator = Agent(LLM("openai", "gpt-5-mini"), role="Redator")
+gerente = Agent(LLM("openai", "gpt-5"), role="Gerente")
+
+res = await Squad([pesquisador, redator], manager=gerente).arun("Resuma as novidades do Python 3.14")
+print(res.text, res.cost, res.outputs.keys(), len(res.steps))
+```
+
 ## Como se relaciona com o resto
 
 Não há mágica nem infra nova: `Agent` é o loop de tool calling (como o
 [`run_agent`](mcp.md)); a memória é o [RAG](rag.md); o `Squad` hierárquico usa
 delegação por tools ([Tools](tools.md)). Você pode trocar o provider de qualquer
 agente sem mudar mais nada — a tese da jangada vale também aqui.
+
+---
+
+# Gemini Interactions e agentes (Deep Research)
+
+`GeminiInteractions` é uma camada fina e **específica do Gemini** sobre a
+[Interactions API](https://ai.google.dev/gemini-api/docs/interactions) do SDK
+`google-genai`. Ela é diferente do `LLM`:
+
+- **Stateful no servidor**: cada chamada devolve um `id`, e a próxima continua a
+  conversa com `previous_interaction_id`, sem reenviar o histórico.
+- É o único caminho para os **agentes gerenciados** do Google, como o **Deep
+  Research**, que planeja, pesquisa na web e escreve um relatório rodando em
+  background por vários minutos.
+
+> **Preview.** A Interactions API e os agentes estão em preview no Google:
+> nomes de agente e campos mudam com frequência. Exige
+> **`google-genai>=2.3`**. Com um SDK mais antigo, a jangada levanta
+> `UnsupportedError` pedindo a atualização.
+
+```bash
+pip install "jangada-ai[gemini]" "google-genai>=2.3"
+```
+
+Use `GEMINI_API_KEY` no ambiente (ou `api_key=`).
+
+```python
+from jangada_ai import GeminiInteractions
+
+gi = GeminiInteractions(model="gemini-3.8-flash")
+r = gi.create("Quem venceu a Copa do Mundo de 2002?", tools=[{"type": "google_search"}])
+print(r.text)
+for c in r.citations:
+    print("-", c["title"], c["url"])
+
+# continua a conversa no servidor, sem reenviar histórico
+r2 = gi.create("E o artilheiro?", previous_interaction_id=r.id)
+```
+
+## Quando usar `GeminiInteractions` e quando usar `LLM`
+
+- **`LLM("gemini", ...)`**: o caminho padrão. Troca de provider sem mudar o
+  código, retry, fallback, cache, guardrails. Tools nativas do Gemini também
+  funcionam por lá (ver [Tools nativas](native-tools.md)).
+- **`GeminiInteractions`**: quando você quer o **estado no servidor**
+  (`previous_interaction_id`), **agentes gerenciados** (Deep Research) ou tarefas
+  longas em **background** com polling. Não tem retry nem fallback: é uma
+  camada fina.
+
+## API
+
+```python
+GeminiInteractions(api_key=None, *, model=None, vertexai=False, **client_kwargs)
+```
+
+| Método (sync / async) | O que faz |
+|---|---|
+| `create` / `acreate(input, *, model, agent, agent_config, tools, system, previous_interaction_id, store, background, response_format, tool_choice, max_tokens, seed, stop, thinking_level, **extra)` | Cria uma interação (ou dispara um agente) |
+| `stream` / `astream(input, ...)` | Mesmo que `create`, produzindo `InteractionEvent` |
+| `resume_stream` / `aresume_stream(id, last_event_id=)` | Retoma um stream interrompido |
+| `get` / `aget(id)` | Busca o estado atual |
+| `cancel` / `acancel(id)` | Cancela |
+| `delete` / `adelete(id)` | Apaga |
+| `wait` / `await_(target, *, poll_interval=10, timeout=None, on_update=None)` | Polling até sair de `queued`/`in_progress` |
+| `run` / `arun(input, *, tools=[...], max_iterations=10, on_tool_call=, on_tool_result=)` | Loop de function calling com execução local |
+| `deep_research` / `adeep_research(prompt, *, agent=DEEP_RESEARCH_AGENT, wait=True, ...)` | Dispara o Deep Research em background |
+
+`close()`/`aclose()` fecham o cliente.
+
+### `InteractionResult`
+
+- `id`, `status` (`queued`, `in_progress`, `requires_action`, `completed`,
+  `failed`, `cancelled`, `incomplete`, `budget_exceeded`), `done`,
+  `requires_action`.
+- `text`: texto final.
+- `steps`: passos normalizados (dicts: `model_output`, `thought`,
+  `function_call`, `google_search_call`...).
+- `citations`: lista de dicts `{url, title, start, end}`.
+- `function_calls`: chamadas pendentes
+  (`InteractionFunctionCall(id, name, args)`, com
+  `.result(output, is_error=False)` para montar a resposta).
+- `usage`, `cost`, `parsed` (com `response_format`), `errors`, `raw`.
+- Preenchidos pelo `run`: `tool_trace`, `iterations`, `stopped_by_limit`,
+  `usage_total`, `cost_total`, `cost_complete`.
+- `raise_for_status()`: levanta `ProviderError` se terminou em `failed`,
+  `cancelled` ou `budget_exceeded`.
+
+## Tools
+
+`tools=` aceita:
+
+- **suas funções** (callables, modelos Pydantic, `Tool`), que viram
+  `{"type": "function", ...}`;
+- **dicts nativos** da API: `{"type": "google_search"}`, `url_context`,
+  `code_execution`, `file_search`, `google_maps`, `mcp_server`...;
+- os **`NativeTool`** canônicos da jangada (`web_search()`, `url_context()`,
+  `code_execution()`, `file_search(...)`, `google_maps(...)`) e
+  `native_tool("gemini", spec)`. `image_generation` e tools de outro provider
+  levantam `UnsupportedError`.
+
+### Function calling com execução local (`run`)
+
+O `run` cria a interação, executa localmente as funções que o modelo pedir e
+responde com `previous_interaction_id`, até a resposta final ou
+`max_iterations`. Uma tool que falha, que não existe ou que é vetada por
+`on_tool_call` (devolvendo `False`) vira um resultado com `is_error`, e o modelo
+pode reagir.
+
+```python
+def cotacao(moeda: str) -> float:
+    """Cotação da moeda em reais."""
+    return {"USD": 5.4, "EUR": 5.9}.get(moeda.upper(), 0.0)
+
+r = gi.run("Quanto custam 100 dólares em reais?", tools=[cotacao])
+print(r.text, [t["name"] for t in r.tool_trace], r.cost_total)
+```
+
+Para controlar o loop à mão, use `create` e responda a `r.function_calls`:
+
+```python
+r = gi.create("Quanto custam 100 dólares?", tools=[cotacao])
+if r.requires_action:
+    respostas = [c.result(cotacao(**c.args)) for c in r.function_calls]
+    r = gi.create(respostas, previous_interaction_id=r.id, tools=[cotacao])
+```
+
+## Structured output
+
+```python
+from pydantic import BaseModel
+
+class Resumo(BaseModel):
+    titulo: str
+    pontos: list[str]
+
+r = gi.create("Resuma a história do frevo.", response_format=Resumo)
+print(r.parsed)            # Resumo(...); se não validar, OutputValidationError
+```
+
+## Streaming
+
+`stream` produz `InteractionEvent(type, text, status, step, usage, result, ...)`,
+com `type` em `created`, `status`, `step_start`, `text`, `thought`, `delta`,
+`step_stop`, `completed` (com `.result` final) e `error` (levanta
+`ProviderError`).
+
+```python
+for ev in gi.stream("Explique RAG em uma frase."):
+    if ev.type == "text":
+        print(ev.text, end="", flush=True)
+```
+
+## Deep Research (background)
+
+```python
+rel = gi.deep_research(
+    "Panorama do mercado de LLMs open-source em 2026, em 5 tópicos.",
+    on_update=lambda x: print("status:", x.status),
+    timeout=1800,
+)
+print(rel.text)
+```
+
+- Roda com `background=True` e `store=True` (a API exige `store` com
+  background) e faz polling a cada 10 s.
+- `wait=False` devolve logo o `InteractionResult` em `queued`/`in_progress`;
+  depois use `gi.wait(r)` ou `gi.get(r.id)`.
+- `timeout` estourado → `APITimeoutError`. A interação **continua rodando** no
+  servidor; você pode retomar com `wait`/`get`.
+- O agente padrão é `DEEP_RESEARCH_AGENT` (`"deep-research-preview-04-2026"`).
+  Outros agentes vão em `agent=` (ex.: `"deep-research-max-preview-04-2026"`,
+  `"antigravity-preview-05-2026"`), com `agent_config=` repassado como veio.
+- Leva minutos e consome muitos tokens (100 mil a milhões por tarefa): use com
+  consciência de custo.
+
+## Usage e custo
+
+O usage segue o contrato da lib: `input_tokens` (total de input + tokens de uso
+de tool), `output_tokens` (output + thoughts), `reasoning_tokens`,
+`cache_read_tokens`, `server_tool_requests` e `total_tokens`. O custo é
+calculado quando há `model=`. Com `agent=` ele fica `None`, porque não há
+tabela de preço por agente.
+
+## Limitações
+
+- `temperature`, `top_p` e `top_k` **não existem** na Interactions API: são
+  ignorados (com log em nível debug). `max_tokens`, `seed`, `stop` e
+  `thinking_level` funcionam.
+- Sem retry, fallback, cache ou guardrails (use o `LLM` para isso).
+- `stream` não roda o loop de tools (`run`).
+- **Vertex AI** (`vertexai=True`): o SDK roteia, mas a doc do Google ainda não
+  confirma a disponibilidade.
+- Retenção no Google: 55 dias (pago) ou 1 dia (free).
+
+Relacionado: [Gemini](llm-gemini.md), [Tools nativas](native-tools.md),
+[Agentes e times](agents.md).
 
 ---
 
@@ -2924,6 +4055,21 @@ class MaxLength(Guardrail):
         texto = " ".join(m.content for m in messages if isinstance(m.content, str))
         return GuardResult(len(texto) <= self.limite, "excedeu o limite")
 ```
+
+## O que mudou na 1.9.0
+
+- **Seguro em chamadas concorrentes.** O controle que impede o judge de disparar os
+  guardrails de novo agora é por contexto (`ContextVar`), não um atributo do `LLM`.
+  Antes, com `asyncio.gather` ou threads usando o mesmo `LLM`, uma chamada podia
+  **pular todos os guardrails** enquanto outra esperava o judge.
+- **`ScopeGuard(check_history=False)`** (padrão): checa só o que chegou depois da
+  última fala do assistant — a mensagem nova do usuário e resultados de tool
+  novos. Um termo bloqueado lá atrás no histórico não trava mais a conversa para
+  sempre, e o loop de um agente não rejulga o histórico inteiro a cada iteração.
+  Use `check_history=True` para o comportamento antigo.
+- **Resultados de tool** (role `tool`) passam pela blocklist.
+- **Recusa na saída preserva o custo**: quando o guard de output barra, a recusa
+  traz o `usage`/`cost` da chamada que já foi paga.
 
 ---
 

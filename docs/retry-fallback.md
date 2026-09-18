@@ -47,6 +47,17 @@ LLM(
 Os erros são normalizados (com `status_code`) — veja [Erros](errors.md). Para o
 custo agregado entre candidatos, veja [Custo e tokens](cost.md).
 
+## O que mudou na 1.9.0
+
+- Quando todos os candidatos falham, o erro final é enviado à
+  [observabilidade](observability.md) como observation `ERROR` (uma vez por chamada,
+  não por tentativa).
+- `embed`/`aembed` agora têm retry com backoff em erro transitório — mas **sem
+  fallback** para outro modelo: vetores de modelos diferentes não são comparáveis
+  e corromperiam o índice.
+- Recusas e respostas vazias viram erros normalizados que entram no failover (veja
+  [Erros](errors.md)); prompt bloqueado por safety no Gemini não é repetido.
+
 ## Exemplo
 
 [`examples/fallback_example.py`](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/examples/fallback_example.py) — script executável.
