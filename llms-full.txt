@@ -763,7 +763,8 @@ llm = LLM("gemini", "gemini-2.5-flash")
 - **Parâmetros canônicos → config**: `max_tokens`→`max_output_tokens`,
   `stop`→`stop_sequences`; `temperature`/`top_p`/`top_k`/`seed` passam direto.
   É o único provider com `top_k`.
-- **Perfil de modelo** (`profiles.py`): `gemini-3.x` descarta sampling
+- **Perfil de modelo** (`profiles.py`): `gemini-3.x` **em diante (inclui o
+  `gemini-4-argon`, GA 2026-10-13)** descarta sampling
   (`temperature`/`top_p`/`top_k`). Veja [Parâmetros e perfis](parameters.md).
 - **Function calling multi-turno no 3.x — *thought signatures* (resolvido pela
   lib)**: o Gemini 3.x anexa um `thought_signature` opaco a cada function call e
@@ -779,7 +780,8 @@ llm = LLM("gemini", "gemini-2.5-flash")
 ## Thinking (raciocínio) — você passa só `thinking_budget`
 
 O Gemini tem duas convenções incompatíveis: o **2.5** só aceita `thinking_budget`
-(em tokens) e o **3.x** só aceita `thinking_level` (`LOW`/`HIGH`) — misturar dá
+(em tokens) e o **3.x em diante** (3.x e o `gemini-4-argon`) só aceita
+`thinking_level` (`LOW`/`HIGH`) — misturar dá
 HTTP 400. A jangada resolve por você: passe **`thinking_budget`** (ou
 `thinking_level`) e a lib adapta ao modelo, empacotando no `thinking_config`
 nativo por baixo dos panos.
@@ -851,9 +853,9 @@ llm = LLM("anthropic", "claude-opus-4-8")
 - **Structured output** (`parse`): por **tool-forcing** — define uma ferramenta
   com o schema e fixa `tool_choice`, depois valida o `tool_use.input` contra o
   modelo Pydantic. (Claude não tem um `response_format` como a OpenAI.) Nos modelos
-  que **não aceitam forced tool use** (Opus 5.5, Fable 5.1 e Mythos 5.1), o `parse` usa
-  `tool_choice="auto"` + **strict tool use** automaticamente — transparente para
-  você. Veja "O que mudou na 1.9.2".
+  que **não aceitam forced tool use** (Opus 5.5, Sonnet 5.5, Fable 5.1 e Mythos 5.1),
+  o `parse` usa `tool_choice="auto"` + **strict tool use** automaticamente —
+  transparente para você. Veja "O que mudou na 1.9.3".
 - **Vision** (`images=`): imagens viram bloco `image` com `source` base64.
 - **Documentos** (`files=`): extração de texto local.
 
@@ -880,6 +882,16 @@ llm = LLM("anthropic", "claude-opus-4-8")
 
 Relacionado: [Matriz de capacidades](capabilities.md),
 [Structured output](structured-output.md).
+
+## O que mudou na 1.9.3
+
+- **Compatível com Claude Sonnet 5.5** (`claude-sonnet-5-5`, lançado em 2026-09-28).
+  Assim como o Opus 5.5, o Sonnet 5.5 traz o breaking change de **forced tool use não
+  aceito** (`tool_choice` `"tool"`/`"any"` → 400). O `parse` agora usa
+  `tool_choice="auto"` + strict tool use também nesse modelo — transparente: chame
+  `LLM("anthropic", "claude-sonnet-5-5").parse(...)` normalmente. O
+  `complete(tools=…, tool_choice="required")` (ou `"any"`/nome) no Sonnet 5.5 levanta
+  `UnsupportedError` claro. Preço inalterado (US$2/US$10, igual ao Sonnet 5).
 
 ## O que mudou na 1.9.2
 
@@ -1121,10 +1133,10 @@ isso em `profiles.py`, **por modelo**, sem você precisar saber:
 
 - `gpt-5` **em diante** (`gpt-5.x`, `gpt-6-*`…, exceto os `*-chat-*`) rejeita
   `temperature` (HTTP 400) e exige `max_completion_tokens`.
-- `gemini-3.x` descarta `temperature`/`top_p`/`top_k`.
+- `gemini-3.x` **em diante** (inclui o `gemini-4-argon`) descarta `temperature`/`top_p`/`top_k`.
 - **Thinking do Gemini**: você passa só `thinking_budget` (ou `thinking_level`) e
-  a lib adapta — no 2.5 vira `thinking_budget`, no 3.x vira `thinking_level` —,
-  empacotando no `thinking_config` nativo. Ver [Gemini](llm-gemini.md).
+  a lib adapta — no 2.5 vira `thinking_budget`, no 3.x+ (inclui o Gemini 4) vira
+  `thinking_level` —, empacotando no `thinking_config` nativo. Ver [Gemini](llm-gemini.md).
 
 `thinking_budget`/`thinking_level` **não são** kwargs do construtor: um kwarg solto
 cairia em `client_kwargs` (vai para o `genai.Client`, lugar errado). Passe por
