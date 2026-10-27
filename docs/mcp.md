@@ -297,6 +297,22 @@ agente = Agent(LLM("openai", "gpt-4o-mini"), role="suporte", tools=[somar])
 serve_mcp("suporte", agent=agente)
 ```
 
+### Nome e ícone do servidor
+
+`title`, `version`, `website_url` e `icons` vão no `serverInfo` do handshake. Clientes
+como o Claude usam isso para o nome e o ícone do conector:
+
+```python
+serve_mcp(
+    "minha-calc", tools=[somar],
+    title="Minha Calculadora", version="1.0.0", website_url="https://exemplo.com",
+    icons=[{"src": "https://exemplo.com/icone.png", "mimeType": "image/png", "sizes": ["96x96"]}],
+)
+```
+
+`icons` aceita URLs (`str`) ou dicts no formato do protocolo. Com o `mcp` 1.x, `title`
+é ignorado com um aviso (o servidor do 1.x não tem esse campo).
+
 ### Por HTTP (streamable-http)
 
 ```python
