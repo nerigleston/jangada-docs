@@ -313,6 +313,25 @@ serve_mcp(
 `icons` aceita URLs (`str`) ou dicts no formato do protocolo. Com o `mcp` 1.x, `title`
 é ignorado com um aviso (o servidor do 1.x não tem esse campo).
 
+### Permissões por requisição (`tool_filter`)
+
+Num servidor HTTP com vários usuários, `tool_filter=` decide a cada requisição quais
+tools aparecem. É uma função sem argumentos que devolve os nomes liberados (ou `None`
+para todas); normalmente lê um `ContextVar` posto pelo seu middleware de autenticação:
+
+```python
+from contextvars import ContextVar
+
+liberadas: ContextVar[set[str] | None] = ContextVar("liberadas", default=None)
+app = build_mcp_app("erp", tools=[...], stateless=True, tool_filter=liberadas.get)
+# no middleware: liberadas.set({"listar_vendas", "listar_produtos"}) antes de chamar o app
+```
+
+A tool fora da lista some do `tools/list` e responde como desconhecida no `tools/call`.
+Com `code_mode`, `search`/`get_schema`/`execute` continuam visíveis e o filtro vale
+dentro deles: o `search` não acha, o `get_schema` não descreve e o `call_tool` do
+sandbox recusa. Use `stateless=True` para que cada requisição rode no próprio contexto.
+
 ### Por HTTP (streamable-http)
 
 ```python
