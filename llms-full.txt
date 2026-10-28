@@ -2052,6 +2052,26 @@ Com `code_mode`, `search`/`get_schema`/`execute` continuam visíveis e o filtro 
 dentro deles: o `search` não acha, o `get_schema` não descreve e o `call_tool` do
 sandbox recusa. Use `stateless=True` para que cada requisição rode no próprio contexto.
 
+### Humano no circuito: tools que alteram dados
+
+Marque as tools com `annotations` (do protocolo MCP) para o cliente saber o que altera
+dados; Claude e ChatGPT pedem confirmação ao usuário antes dessas chamadas:
+
+```python
+from jangada_ai.tools import Tool, to_tool
+
+apagar = to_tool(apagar_pedido)
+apagar.annotations = {"readOnlyHint": False, "destructiveHint": True}
+```
+
+Com Code Mode, uma tool chamada **dentro** do `execute` não passa por essa confirmação
+(o usuário aprova o `execute` uma vez). Deixe as tools que alteram dados fora do sandbox
+com `direct=`; elas aparecem como tools comuns e cada chamada é aprovada:
+
+```python
+CodeMode(direct=["apagar_pedido", "criar_pedido"], execute_annotations={"readOnlyHint": True})
+```
+
 ### Por HTTP (streamable-http)
 
 ```python
