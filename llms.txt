@@ -23,6 +23,7 @@ instalado.
 ## Documentação
 
 - [Começando](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/getting-started.md): instalação, primeira chamada e como trocar de provider.
+- [JavaScript / TypeScript](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/javascript.md): a jangada no npm (`jangada-ai`), em JS e TS: instalação, primeira chamada, structured output com Zod, tools, streaming e diferenças em relação ao Python.
 - [Providers e chaves](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/providers.md): os providers (Anthropic, OpenAI, Groq, Gemini, Mistral, Ollama, OpenRouter, DeepSeek, Bedrock, Azure, Vertex), variáveis de ambiente e precedência de chave.
 - [Matriz de capacidades](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/capabilities.md): o que cada provider suporta (vision, áudio, structured, params).
 - [OpenAI](https://raw.githubusercontent.com/nerigleston/jangada-docs/main/docs/llm-openai.md): modelos, recursos e quirks do provider OpenAI.
