@@ -193,14 +193,18 @@ const r = await runAgent(llm, "Use as tools do servidor.", { client: mcp });
 ```js
 import { RAG, vectorStore } from "jangada-ai/rag";
 
-const store = vectorStore(process.env.DATABASE_URL); // postgresql://, mongodb:// ou "memory"
+const store = vectorStore(process.env.DATABASE_URL); // postgresql://, postgres:// ou mongodb://
 const rag = new RAG(new LLM("openai", "text-embedding-3-small"), store, { chat: llm });
-await rag.syncTexts(["A padaria abre às 6h.", "Aceitamos PIX."], { documentId: "faq" });
+await rag.addTexts(["A padaria abre às 6h.", "Aceitamos PIX."]);
 const resposta = await rag.ask("Como posso pagar?");
 ```
 
 O esquema no Postgres e no MongoDB é o mesmo da lib Python, inclusive o hash dos
-chunks e o lock da indexação incremental. Python e JS podem usar o mesmo banco.
+chunks, então Python e JS podem usar o mesmo banco. A indexação incremental
+(`syncTexts`, com o mesmo lock do Python) existe só no Postgres e na memória.
+
+Documentação completa do pacote, página por página:
+[docs.jangada.dev.br/docs/js](https://docs.jangada.dev.br/docs/js).
 
 ## A2A e eval
 
