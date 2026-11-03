@@ -35,6 +35,9 @@ limite e ignoram o parâmetro. Valores fora de 1..100 levantam `ValueError`.
 |----------|:-----------:|---------------|
 | OpenAI   | ✅ | `text-embedding-3-small` / `-large` |
 | Gemini   | ✅ | `gemini-embedding-001` / `gemini-embedding-2` |
+| Mistral  | ✅ | `mistral-embed` (`task` é ignorado) |
+| Ollama   | ✅ | `nomic-embed-text`, `embeddinggemma` (local ou Ollama Cloud) |
+| Azure OpenAI / OpenRouter | ✅ | os mesmos modelos de embedding da OpenAI |
 | Anthropic| ❌ | — (use Voyage/Cohere por fora) |
 | Groq     | ❌ | — |
 
