@@ -3378,20 +3378,30 @@ hora, a jangada publica o catálogo em `jangada.dev.br/prices.json` e o aplica
 **sozinha, sem você escrever nada** — e **sem precisar dar `pip install -U`**.
 
 **Automático (padrão).** Na primeira vez que um custo é calculado (logo abaixo de
-cada chamada de provider, em `compute_cost`), a lib dispara **em background** um
-refresh do catálogo, cacheado por **1 dia**. Você só usa o LLM normalmente:
+cada chamada de provider, em `compute_cost`), a lib atualiza a tabela em duas etapas:
+
+1. Se existe cache em disco válido (`~/.cache/jangada/prices.json`), ele é aplicado
+   **na hora**, antes do cálculo, mesmo vencido. É só leitura de arquivo local.
+2. Se o cache estiver vencido (mais de **1 dia**) ou ausente, a busca na rede roda
+   **em background**. Até ela terminar vale o cache (ou o embutido, se não houver cache).
+
+Você só usa o LLM normalmente:
 
 ```python
 llm = jangada_ai.LLM(provider="openai", model="gpt-4o-mini")
 comp = llm.complete("...")
-print(comp.cost)   # já tende a usar os preços do dia (refresh roda em background)
+print(comp.cost)   # já sai com o catálogo do cache; a rede, se precisar, vai em background
 ```
 
-- **Não bloqueia**: a busca roda numa thread daemon; o `import` nunca toca a rede e
-  a chamada não trava. As primeiras chamadas usam o embutido até o refresh terminar.
+- **Não bloqueia na rede**: a busca roda numa thread daemon; o `import` nunca toca a
+  rede e a chamada não espera por ela. Sem cache em disco (1ª execução na máquina),
+  as primeiras chamadas usam o embutido até o refresh terminar.
+- **1º custo do processo já correto**: em versões anteriores, até a thread terminar o 1º
+  custo saía da tabela embutida mesmo com cache válido em disco. Modelo novo, que só
+  existe no catálogo remoto, ficava com `cost=None` ou casava uma regra genérica errada.
 - **No máximo 1x/dia**: cache em `~/.cache/jangada/prices.json` (e 1x por processo).
 - **Resiliente**: rede falhou? fica no cache/embutido — nunca levanta.
-- **Desligar**: env `JANGADA_NO_PRICE_REFRESH=1`.
+- **Desligar**: env `JANGADA_NO_PRICE_REFRESH=1` (desliga a rede e a leitura do cache).
 
 **Manual (`refresh_prices`).** Para controle explícito/síncrono — garantir preços
 frescos no boot, forçar agora, ou apontar outra URL:
@@ -3424,6 +3434,8 @@ número exato de um modelo específico.
 ## Onde isso aparece
 
 - `Completion.cost` / `Completion.usage` em cada chamada.
+- No painel de [observability](observability.md): a lib envia os tokens detalhados
+  (reasoning, cache, tools nativas) e o servidor recalcula o custo com o catálogo atual.
 - Totais agregados em [Fluxos e Graph](flows.md).
 - No [Debug passo a passo](debug.md), o custo de cada etapa é exibido no trace.
 
@@ -3733,10 +3745,28 @@ O feedback vira um `Score` no trace (origem `api`), aparece no dashboard junto d
 ## O que é capturado
 
 De cada chamada: `provider`, `model`, `promptTokens`/`completionTokens` (de
-`usage`), `costUsd` (de `cost`), latência, o **input** (mensagens ou textos de
+`usage`), os tokens detalhados (abaixo), `costUsd` (de `cost`), latência, o **input** (mensagens ou textos de
 embedding; conteúdos muito longos são truncados), o **output** (texto da resposta,
 ou quantidade/dimensão dos embeddings) e as **tool calls** que o modelo pediu
 (`tools`: id/name/args).
+
+### Tokens detalhados e custo calculado no servidor
+
+Além de `promptTokens` e `completionTokens`, cada observation leva o detalhamento do
+`usage`, quando o provider informa:
+
+| Campo | Vem de | O que é |
+|-------|--------|---------|
+| `reasoningTokens` | `usage["reasoning_tokens"]` | tokens de raciocínio (thinking); já estão dentro de `completionTokens` |
+| `cacheReadTokens` | `usage["cache_read_tokens"]` | parte do input lida do cache; já está dentro de `promptTokens` |
+| `cacheWriteTokens` | `usage["cache_write_tokens"]` | parte do input gravada no cache; já está dentro de `promptTokens` |
+| `serverToolRequests` | `usage["server_tool_requests"]` | chamadas de tools nativas, `{"web_search": 2}` |
+
+Campo ausente no `usage` não vai no payload. Com esses números o painel recalcula o
+custo **no servidor**, com o catálogo de preços atual, e mostra reasoning e cache em
+separado. Assim o custo do painel não depende da versão da lib nem da tabela que
+estava carregada no processo (ex.: thinking do Gemini, que é cobrado como output).
+O `costUsd` calculado pela lib continua indo junto, como referência.
 
 O **input** preserva o histórico de ferramentas de forma auditável: cada
 `tool_call` registra o **nome e os argumentos** (`[tool_call consultar_estoque

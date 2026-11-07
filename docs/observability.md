@@ -158,10 +158,28 @@ O feedback vira um `Score` no trace (origem `api`), aparece no dashboard junto d
 ## O que é capturado
 
 De cada chamada: `provider`, `model`, `promptTokens`/`completionTokens` (de
-`usage`), `costUsd` (de `cost`), latência, o **input** (mensagens ou textos de
+`usage`), os tokens detalhados (abaixo), `costUsd` (de `cost`), latência, o **input** (mensagens ou textos de
 embedding; conteúdos muito longos são truncados), o **output** (texto da resposta,
 ou quantidade/dimensão dos embeddings) e as **tool calls** que o modelo pediu
 (`tools`: id/name/args).
+
+### Tokens detalhados e custo calculado no servidor
+
+Além de `promptTokens` e `completionTokens`, cada observation leva o detalhamento do
+`usage`, quando o provider informa:
+
+| Campo | Vem de | O que é |
+|-------|--------|---------|
+| `reasoningTokens` | `usage["reasoning_tokens"]` | tokens de raciocínio (thinking); já estão dentro de `completionTokens` |
+| `cacheReadTokens` | `usage["cache_read_tokens"]` | parte do input lida do cache; já está dentro de `promptTokens` |
+| `cacheWriteTokens` | `usage["cache_write_tokens"]` | parte do input gravada no cache; já está dentro de `promptTokens` |
+| `serverToolRequests` | `usage["server_tool_requests"]` | chamadas de tools nativas, `{"web_search": 2}` |
+
+Campo ausente no `usage` não vai no payload. Com esses números o painel recalcula o
+custo **no servidor**, com o catálogo de preços atual, e mostra reasoning e cache em
+separado. Assim o custo do painel não depende da versão da lib nem da tabela que
+estava carregada no processo (ex.: thinking do Gemini, que é cobrado como output).
+O `costUsd` calculado pela lib continua indo junto, como referência.
 
 O **input** preserva o histórico de ferramentas de forma auditável: cada
 `tool_call` registra o **nome e os argumentos** (`[tool_call consultar_estoque

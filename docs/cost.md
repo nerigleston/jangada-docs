@@ -35,20 +35,30 @@ hora, a jangada publica o catálogo em `jangada.dev.br/prices.json` e o aplica
 **sozinha, sem você escrever nada** — e **sem precisar dar `pip install -U`**.
 
 **Automático (padrão).** Na primeira vez que um custo é calculado (logo abaixo de
-cada chamada de provider, em `compute_cost`), a lib dispara **em background** um
-refresh do catálogo, cacheado por **1 dia**. Você só usa o LLM normalmente:
+cada chamada de provider, em `compute_cost`), a lib atualiza a tabela em duas etapas:
+
+1. Se existe cache em disco válido (`~/.cache/jangada/prices.json`), ele é aplicado
+   **na hora**, antes do cálculo, mesmo vencido. É só leitura de arquivo local.
+2. Se o cache estiver vencido (mais de **1 dia**) ou ausente, a busca na rede roda
+   **em background**. Até ela terminar vale o cache (ou o embutido, se não houver cache).
+
+Você só usa o LLM normalmente:
 
 ```python
 llm = jangada_ai.LLM(provider="openai", model="gpt-4o-mini")
 comp = llm.complete("...")
-print(comp.cost)   # já tende a usar os preços do dia (refresh roda em background)
+print(comp.cost)   # já sai com o catálogo do cache; a rede, se precisar, vai em background
 ```
 
-- **Não bloqueia**: a busca roda numa thread daemon; o `import` nunca toca a rede e
-  a chamada não trava. As primeiras chamadas usam o embutido até o refresh terminar.
+- **Não bloqueia na rede**: a busca roda numa thread daemon; o `import` nunca toca a
+  rede e a chamada não espera por ela. Sem cache em disco (1ª execução na máquina),
+  as primeiras chamadas usam o embutido até o refresh terminar.
+- **1º custo do processo já correto**: em versões anteriores, até a thread terminar o 1º
+  custo saía da tabela embutida mesmo com cache válido em disco. Modelo novo, que só
+  existe no catálogo remoto, ficava com `cost=None` ou casava uma regra genérica errada.
 - **No máximo 1x/dia**: cache em `~/.cache/jangada/prices.json` (e 1x por processo).
 - **Resiliente**: rede falhou? fica no cache/embutido — nunca levanta.
-- **Desligar**: env `JANGADA_NO_PRICE_REFRESH=1`.
+- **Desligar**: env `JANGADA_NO_PRICE_REFRESH=1` (desliga a rede e a leitura do cache).
 
 **Manual (`refresh_prices`).** Para controle explícito/síncrono — garantir preços
 frescos no boot, forçar agora, ou apontar outra URL:
@@ -81,6 +91,8 @@ número exato de um modelo específico.
 ## Onde isso aparece
 
 - `Completion.cost` / `Completion.usage` em cada chamada.
+- No painel de [observability](observability.md): a lib envia os tokens detalhados
+  (reasoning, cache, tools nativas) e o servidor recalcula o custo com o catálogo atual.
 - Totais agregados em [Fluxos e Graph](flows.md).
 - No [Debug passo a passo](debug.md), o custo de cada etapa é exibido no trace.
 
