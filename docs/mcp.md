@@ -331,7 +331,9 @@ A tool fora da lista some do `tools/list` e responde como desconhecida no `tools
 
 Com `code_mode`, `search`/`get_schema`/`execute` continuam visíveis e o filtro vale
 dentro deles: o `search` não acha, o `get_schema` não descreve e o `call_tool` do
-sandbox recusa. Use `stateless=True` para que cada requisição rode no próprio contexto.
+sandbox recusa. Com `CodeMode(discovery=False)`, o catálogo na descrição do `execute`
+também sai filtrado (desde a 1.14.2). Use `stateless=True` para que cada requisição
+rode no próprio contexto.
 
 Do mesmo jeito, `tool_description=` ajusta a descrição de cada tool por requisição
 (ex.: instruções do tenant). Recebe `(nome, descrição)` e devolve a descrição a mostrar,
